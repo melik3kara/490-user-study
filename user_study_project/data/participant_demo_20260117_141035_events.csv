@@ -1,0 +1,16 @@
+timestamp,event_type,trial_id,details,frame_number
+9.623125041660387,trial_start,practice_1,,0
+9.624227333333693,fixation_onset,practice_1,,
+10.200218666665023,video_onset,practice_1,video_M.mp4|video_O.mp4,61
+13.187945583340479,video_offset,practice_1,,420
+20.25283245833998,response,practice_1,"response=left,rt=7.0491",420
+22.631603875008295,confidence,practice_1,rating=3,
+22.872397750004893,trial_start,practice_2,,450
+22.874569125007838,fixation_onset,practice_2,,
+23.393363625000347,video_onset,practice_2,video_E.mp4|video_G.mp4,511
+26.370996166660916,video_offset,practice_2,,870
+27.954499291663524,response,practice_2,"response=right,rt=1.5804",870
+29.26433366666606,confidence,practice_2,rating=2,
+31.47588125000766,trial_start,1,,900
+31.478066791663878,fixation_onset,1,,
+31.979896541670314,video_onset,1,video_O.mp4|video_M.mp4,961

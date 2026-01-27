@@ -8,21 +8,10 @@
 
 ---
 
-## 1. Çalışmanın Amacı
 
-Bu kullanıcı çalışması, insanların kısa yüz videolarından kişilik özelliklerini nasıl algıladığını araştırmaktadır. Katılımcılar, aynı kişilik özelliği üzerinde **YÜKSEK** ve **DÜŞÜK** olarak derecelendirilmiş iki kişinin videosunu yan yana izleyerek, hangi kişinin o özelliğe daha fazla sahip göründüğünü değerlendirmektedir.
+## 1. Deneysel Tasarım
 
-### Araştırma Soruları
-
-1. İnsanlar yüz videolarından kişilik özelliklerini ne kadar doğru algılayabilir?
-2. Algı sürecinde göz hareketleri hangi yüz bölgelerine odaklanır?
-3. Farklı kişilik özellikleri için algı doğruluğu ve göz hareketi örüntüleri nasıl değişir?
-
----
-
-## 2. Deneysel Tasarım
-
-### 2.1 Kişilik Özellikleri (Big Five Modeli)
+### 1.1 Kişilik Özellikleri (Big Five Modeli)
 
 Çalışma, beş temel kişilik özelliğini kapsamaktadır:
 
@@ -34,7 +23,7 @@ Bu kullanıcı çalışması, insanların kısa yüz videolarından kişilik öz
 | **Duygusal Denge** | Emotional Stability | Sakin, strese dayanıklı, dengeli |
 | **Deneyime Açıklık** | Openness | Yaratıcı, meraklı, yeniliklere açık |
 
-### 2.2 Deneme (Trial) Yapısı
+### 1.2 Deneme (Trial) Yapısı
 
 Her deneme şu aşamalardan oluşmaktadır:
 
@@ -59,7 +48,7 @@ Her deneme şu aşamalardan oluşmaktadır:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.3 Soru Formatları
+### 1.3 Soru Formatları
 
 Her kişilik özelliği için açıklayıcı sorular kullanılmaktadır:
 
@@ -71,7 +60,7 @@ Her kişilik özelliği için açıklayıcı sorular kullanılmaktadır:
 | Duygusal Denge | "Which person appears more calm, emotionally stable, and resilient?" |
 | Deneyime Açıklık | "Which person appears more open to new experiences, creative, and curious?" |
 
-### 2.4 Deneme Sayısı ve Tasarım
+### 1.4 Deneme Sayısı ve Tasarım
 
 - **Toplam video sayısı:** 50 video (5 özellik × 2 seviye × 5 video)
 - **Her özellik için:** 5 YÜKSEK + 5 DÜŞÜK video
@@ -79,7 +68,7 @@ Her kişilik özelliği için açıklayıcı sorular kullanılmaktadır:
 - **Deneme sayısı:** 5 × 5 = 25 deneme/özellik × 5 özellik = **125 toplam deneme**
 - **Tahmini süre:** ~45-60 dakika (molalar dahil)
 
-### 2.5 Randomizasyon
+### 1.5 Randomizasyon
 
 - Deneme sırası rastgele karıştırılır
 - **Özellik tekrarı önleme:** Aynı özellik art arda gelmez (minimum 2 deneme aralık)
@@ -87,9 +76,9 @@ Her kişilik özelliği için açıklayıcı sorular kullanılmaktadır:
 
 ---
 
-## 3. Stimuli (Video Uyaranlar)
+## 2. Stimuli (Video Uyaranlar)
 
-### 3.1 Video Özellikleri
+### 2.1 Video Özellikleri
 
 | Özellik | Değer |
 |---------|-------|
@@ -98,7 +87,7 @@ Her kişilik özelliği için açıklayıcı sorular kullanılmaktadır:
 | **Çözünürlük** | Orijinal (değişken) |
 | **İçerik** | Yüz videoları |
 
-### 3.2 Video Organizasyonu
+### 2.2 Video Organizasyonu
 
 ```
 stimuli/videos/study_videos/
@@ -122,7 +111,7 @@ stimuli/videos/study_videos/
     └── low/
 ```
 
-### 3.3 Video Normalizasyonu
+### 2.3 Video Normalizasyonu
 
 > ⚠️ **ÖNEMLİ:** Videolara herhangi bir normalizasyon veya ön işleme uygulanmamıştır.
 
@@ -135,9 +124,9 @@ stimuli/videos/study_videos/
 
 ---
 
-## 4. Göz İzleme (Eye Tracking)
+## 3. Göz İzleme (Eye Tracking)
 
-### 4.1 Ekipman
+### 3.1 Ekipman
 
 | Özellik | Değer |
 |---------|-------|
@@ -146,13 +135,13 @@ stimuli/videos/study_videos/
 | **Doğruluk** | < 0.5° görsel açı |
 | **Bağlantı** | Ethernet (IP: 100.1.1.1) |
 
-### 4.2 Kalibrasyon
+### 3.2 Kalibrasyon
 
 - **Tip:** 9 noktalı HV9 kalibrasyon
 - **Kabul kriteri:** < 1.0° ortalama hata
 - **Doğrulama:** Her oturumun başında
 
-### 4.3 İlgi Alanları (Areas of Interest)
+### 3.3 İlgi Alanları (Areas of Interest)
 
 Her denemede iki ilgi alanı tanımlanmaktadır:
 
@@ -169,7 +158,7 @@ Her denemede iki ilgi alanı tanımlanmaktadır:
 └────────────────────────────────────────────────────┘
 ```
 
-### 4.4 Kaydedilen Göz İzleme Verileri
+### 3.4 Kaydedilen Göz İzleme Verileri
 
 - Göz pozisyonu (x, y koordinatları)
 - Pupil boyutu
@@ -179,9 +168,9 @@ Her denemede iki ilgi alanı tanımlanmaktadır:
 
 ---
 
-## 5. Veri Toplama
+## 4. Veri Toplama
 
-### 5.1 Davranışsal Veriler
+### 4.1 Davranışsal Veriler
 
 Her deneme için kaydedilen değişkenler:
 
@@ -198,7 +187,7 @@ Her deneme için kaydedilen değişkenler:
 | `response_time` | Yanıt süresi (saniye) |
 | `confidence_rating` | Güven derecesi (1-5) |
 
-### 5.2 Veri Dosyaları
+### 4.2 Veri Dosyaları
 
 ```
 data/
@@ -210,7 +199,7 @@ eyelink_data/
 └── el20260127_143052.edf    # EyeLink ham veri dosyası
 ```
 
-### 5.3 Örnek Veri Formatı
+### 4.3 Örnek Veri Formatı
 
 **CSV Çıktısı:**
 ```csv
@@ -221,7 +210,7 @@ P001,2,Agreeableness,MvWDky9ZaWU.000.mp4,oxw3nT9LSsg.000.mp4,right,right,True,1.
 
 ---
 
-## 6. Deney Akışı
+## 5. Deney Akışı
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -274,9 +263,9 @@ P001,2,Agreeableness,MvWDky9ZaWU.000.mp4,oxw3nT9LSsg.000.mp4,right,right,True,1.
 
 ---
 
-## 7. Teknik Altyapı
+## 6. Teknik Altyapı
 
-### 7.1 Yazılım
+### 6.1 Yazılım
 
 | Bileşen | Sürüm |
 |---------|-------|
@@ -287,7 +276,7 @@ P001,2,Agreeableness,MvWDky9ZaWU.000.mp4,oxw3nT9LSsg.000.mp4,right,right,True,1.
 | **Pandas** | 2.x |
 | **pylink** | SR Research |
 
-### 7.2 Donanım Gereksinimleri
+### 6.2 Donanım Gereksinimleri
 
 | Bileşen | Minimum | Önerilen |
 |---------|---------|----------|
@@ -296,7 +285,7 @@ P001,2,Agreeableness,MvWDky9ZaWU.000.mp4,oxw3nT9LSsg.000.mp4,right,right,True,1.
 | **Ekran** | 1920×1080 | 1920×1080 @ 60Hz+ |
 | **Göz İzleyici** | EyeLink 1000 Plus | EyeLink 1000 Plus |
 
-### 7.3 Proje Dosyaları
+### 6.3 Proje Dosyaları
 
 ```
 user_study_project/
@@ -313,49 +302,7 @@ user_study_project/
 
 ---
 
-## 8. Analiz Planı
-
-### 8.1 Davranışsal Analiz
-
-1. **Doğruluk Analizi**
-   - Her özellik için ortalama doğruluk oranı
-   - Şans seviyesi (%50) ile karşılaştırma
-   - Özellikler arası karşılaştırma
-
-2. **Yanıt Süresi Analizi**
-   - Doğru vs yanlış yanıtlar için RT
-   - Özellik bazında RT farklılıkları
-
-3. **Güven-Doğruluk İlişkisi**
-   - Yüksek güvenli yanıtlar daha doğru mu?
-
-### 8.2 Göz İzleme Analizi
-
-1. **Bakış Dağılımı**
-   - Sol vs sağ video için toplam bakış süresi
-   - Seçilen vs seçilmeyen video karşılaştırması
-
-2. **Fiksasyon Örüntüleri**
-   - Ortalama fiksasyon süresi
-   - Fiksasyon sayısı
-   - İlk fiksasyon lokasyonu
-
-3. **Geçiş Analizi**
-   - İki video arasındaki geçiş sayısı
-   - Karar öncesi son bakış
-
----
-
-## 9. Etik Hususlar
-
-- Katılımcılar bilgilendirilmiş onam formu imzalar
-- Kişisel veriler anonim tutulur
-- Göz izleme verileri güvenli şekilde saklanır
-- Katılımcılar istedikleri zaman çalışmadan çekilebilir
-
----
-
-## 10. İletişim
+## 7. İletişim
 
 **Proje Danışmanı:**  
 Prof. Dr. Uğur Güdükbay  

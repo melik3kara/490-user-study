@@ -3,15 +3,14 @@ Trial Manager for the Pairwise Personality Perception Experiment.
 
 This module handles trial generation, randomization, and management.
 It creates balanced trial lists ensuring proper counterbalancing of
-video positions (left/right) across traits.
-
-TODO: Update the generate_trial_list() function once final video
-stimuli are available.
+video positions (left/right) across traits and prevents consecutive
+trials of the same trait.
 """
 
 import random
 import csv
 import os
+import glob
 from datetime import datetime
 
 
@@ -44,12 +43,114 @@ class TrialManager:
     # TRIAL GENERATION
     # ==========================================================================
     
+    def _load_video_files(self):
+        """
+        Load all available video files from the study_videos directory.
+        
+        Returns
+        -------
+        dict
+            Dictionary mapping traits to {high: [...], low: [...]} video filenames.
+        """
+        video_dict = {}
+        base_path = self.config.VIDEO_BASE_PATH
+        
+        for trait in self.config.TRAITS:
+            # Convert trait name to folder name (lowercase with underscores)
+            trait_folder = trait.lower().replace(" ", "_")
+            
+            # Get high videos
+            high_pattern = os.path.join(base_path, trait_folder, "high", "*.mp4")
+            high_videos = glob.glob(high_pattern)
+            high_videos = [os.path.basename(v) for v in sorted(high_videos)]
+            
+            # Get low videos
+            low_pattern = os.path.join(base_path, trait_folder, "low", "*.mp4")
+            low_videos = glob.glob(low_pattern)
+            low_videos = [os.path.basename(v) for v in sorted(low_videos)]
+            
+            if high_videos and low_videos:
+                video_dict[trait] = {
+                    "high": high_videos,
+                    "low": low_videos
+                }
+                print(f"Loaded {len(high_videos)} high + {len(low_videos)} low videos for {trait}")
+            else:
+                print(f"WARNING: No videos found for {trait}")
+        
+        return video_dict
+    
+    def _avoid_trait_repetition(self, trials, min_spacing=2):
+        """
+        Reorder trials to avoid consecutive trials of the same trait.
+        
+        Uses a greedy algorithm to space out trials with the same trait.
+        
+        Parameters
+        ----------
+        trials : list
+            List of trial dictionaries.
+        min_spacing : int
+            Minimum number of trials between same trait.
+            
+        Returns
+        -------
+        list
+            Reordered trial list.
+        """
+        if len(trials) <= 1:
+            return trials
+        
+        # Group trials by trait
+        trait_groups = {}
+        for trial in trials:
+            trait = trial['trait']
+            if trait not in trait_groups:
+                trait_groups[trait] = []
+            trait_groups[trait].append(trial)
+        
+        # Shuffle within each trait group
+        for trait in trait_groups:
+            random.shuffle(trait_groups[trait])
+        
+        # Build spaced trial list
+        result = []
+        trait_queues = {trait: list(reversed(trials)) for trait, trials in trait_groups.items()}
+        recent_traits = []  # Track recent traits to avoid
+        
+        while any(trait_queues.values()):
+            # Get available traits (not in recent history)
+            available_traits = [
+                trait for trait, queue in trait_queues.items()
+                if queue and trait not in recent_traits[-min_spacing:]
+            ]
+            
+            # If no available traits, relax constraint
+            if not available_traits:
+                available_traits = [trait for trait, queue in trait_queues.items() if queue]
+            
+            if not available_traits:
+                break
+            
+            # Pick a random available trait
+            chosen_trait = random.choice(available_traits)
+            trial = trait_queues[chosen_trait].pop()
+            result.append(trial)
+            recent_traits.append(chosen_trait)
+        
+        # Re-number trials
+        for i, trial in enumerate(result):
+            trial['trial_id'] = i + 1
+        
+        return result
+    
     def generate_trial_list(self, participant_id, stimuli_dict=None):
         """
         Generate the complete trial list for a participant.
         
-        This method creates all trials based on the stimulus dictionary,
-        ensuring proper counterbalancing of HIGH/LOW video positions.
+        Creates all HIGH-LOW pairs for each trait (full factorial design),
+        counterbalances video positions, and randomizes trial order while
+        preventing consecutive trials of the same trait.
         
         Parameters
         ----------
@@ -57,46 +158,24 @@ class TrialManager:
             Participant identifier (used for counterbalancing).
         stimuli_dict : dict, optional
             Dictionary mapping traits to high/low video lists.
-            If None, uses the placeholder from config.
+            If None, loads from VIDEO_BASE_PATH.
             
         Returns
         -------
         list
             List of trial dictionaries.
-            
-        TODO: UPDATE THIS FUNCTION ONCE FINAL VIDEOS ARE AVAILABLE
-        ======================================================================
-        
-        Current implementation uses placeholder video names.
-        
-        When final stimuli are ready:
-        1. Replace STIMULI_PLACEHOLDER with actual stimulus dictionary
-        2. Implement proper pair construction logic
-        3. Consider Latin square design for order effects
-        4. Add checks for video file existence
-        
-        Expected stimulus dictionary format:
-        {
-            "Trait Name": {
-                "high": ["video1.mp4", "video2.mp4", ...],
-                "low": ["video3.mp4", "video4.mp4", ...]
-            },
-            ...
-        }
-        
-        Pair construction strategies to consider:
-        - All possible HIGH-LOW pairs
-        - Matched pairs (e.g., same person at different time points)
-        - Balanced sampling to limit experiment length
-        
-        ======================================================================
         """
         if stimuli_dict is None:
-            stimuli_dict = self.config.STIMULI_PLACEHOLDER
+            stimuli_dict = self._load_video_files()
+        
+        if not stimuli_dict:
+            print("ERROR: No video files found!")
+            return []
         
         trials = []
         trial_id = 1
         
+        # Generate all HIGH-LOW pairs for each trait (full factorial)
         for trait in self.config.TRAITS:
             if trait not in stimuli_dict:
                 print(f"WARNING: No stimuli defined for trait '{trait}'")
@@ -105,59 +184,63 @@ class TrialManager:
             high_videos = stimuli_dict[trait]["high"]
             low_videos = stimuli_dict[trait]["low"]
             
-            # TODO: Implement proper pair construction
-            # ================================================================
-            # PAIR CONSTRUCTION PLACEHOLDER
-            # ================================================================
-            # Currently: Simple pairing of first high with first low, etc.
-            # Future: Implement full combinatorial or matched pairing
-            
-            num_pairs = min(
-                len(high_videos), 
-                len(low_videos),
-                self.config.TRIALS_PER_TRAIT
-            )
-            
-            for i in range(num_pairs):
-                high_video = high_videos[i % len(high_videos)]
-                low_video = low_videos[i % len(low_videos)]
-                
-                # Counterbalance left/right position
-                # Use participant_id hash to determine starting position
-                position_seed = hash(f"{participant_id}_{trait}_{i}")
-                high_on_left = (position_seed % 2 == 0)
-                
-                if self.config.RANDOMIZE_VIDEO_POSITIONS:
-                    high_on_left = random.choice([True, False])
-                
-                if high_on_left:
-                    video_left = high_video
-                    video_right = low_video
-                    high_position = "left"
-                else:
-                    video_left = low_video
-                    video_right = high_video
-                    high_position = "right"
-                
-                trial = {
-                    "trial_id": trial_id,
-                    "trait": trait,
-                    "video_left": video_left,
-                    "video_right": video_right,
-                    "high_video": high_video,
-                    "low_video": low_video,
-                    "high_position": high_position,
-                }
-                
-                trials.append(trial)
-                trial_id += 1
+            # Create all possible HIGH-LOW pairs (full factorial)
+            for high_video in high_videos:
+                for low_video in low_videos:
+                    # Counterbalance left/right position
+                    # Use participant_id hash for consistency across sessions
+                    position_seed = hash(f"{participant_id}_{trait}_{high_video}_{low_video}")
+                    high_on_left = (position_seed % 2 == 0)
+                    
+                    if self.config.RANDOMIZE_VIDEO_POSITIONS:
+                        high_on_left = random.choice([True, False])
+                    
+                    if high_on_left:
+                        video_left = high_video
+                        video_right = low_video
+                        high_position = "left"
+                    else:
+                        video_left = low_video
+                        video_right = high_video
+                        high_position = "right"
+                    
+                    # Get full video paths
+                    trait_folder = trait.lower().replace(" ", "_")
+                    video_left_path = os.path.join(
+                        self.config.VIDEO_BASE_PATH, 
+                        trait_folder,
+                        "high" if high_on_left else "low",
+                        video_left
+                    )
+                    video_right_path = os.path.join(
+                        self.config.VIDEO_BASE_PATH,
+                        trait_folder,
+                        "low" if high_on_left else "high",
+                        video_right
+                    )
+                    
+                    trial = {
+                        "trial_id": trial_id,
+                        "trait": trait,
+                        "video_left": video_left,
+                        "video_right": video_right,
+                        "video_left_path": video_left_path,
+                        "video_right_path": video_right_path,
+                        "high_video": high_video,
+                        "low_video": low_video,
+                        "high_position": high_position,
+                    }
+                    
+                    trials.append(trial)
+                    trial_id += 1
         
-        # Randomize trial order if enabled
+        print(f"Generated {len(trials)} trials total")
+        
+        # Randomize and space out traits
         if self.config.RANDOMIZE_TRIAL_ORDER:
-            random.shuffle(trials)
-            # Re-number trials after shuffle
-            for i, trial in enumerate(trials):
-                trial["trial_id"] = i + 1
+            min_spacing = getattr(self.config, 'MIN_TRAIT_SPACING', 2)
+            trials = self._avoid_trait_repetition(trials, min_spacing=min_spacing)
+            print(f"Randomized trial order with min trait spacing of {min_spacing}")
         
         self.trials = trials
         return trials
@@ -180,27 +263,23 @@ class TrialManager:
             List of practice trial dictionaries.
         """
         if stimuli_dict is None:
-            stimuli_dict = self.config.STIMULI_PLACEHOLDER
+            stimuli_dict = self._load_video_files()
+        
+        if not stimuli_dict:
+            print("WARNING: No videos found for practice trials")
+            self.practice_trials = []
+            return []
         
         practice_trials = []
         
-        # TODO: Define specific practice trials when stimuli are available
-        # ====================================================================
-        # PRACTICE TRIAL PLACEHOLDER
-        # ====================================================================
-        # Currently: Use first N trials as practice
-        # Future: Select specific, clear examples for practice
-        
         # Get a sample of traits for practice
+        available_traits = [t for t in self.config.TRAITS if t in stimuli_dict]
         practice_traits = random.sample(
-            self.config.TRAITS,
-            min(self.config.NUM_PRACTICE_TRIALS, len(self.config.TRAITS))
+            available_traits,
+            min(self.config.NUM_PRACTICE_TRIALS, len(available_traits))
         )
         
         for i, trait in enumerate(practice_traits):
-            if trait not in stimuli_dict:
-                continue
-            
             high_videos = stimuli_dict[trait]["high"]
             low_videos = stimuli_dict[trait]["low"]
             
@@ -211,11 +290,35 @@ class TrialManager:
             low_video = low_videos[0]
             high_on_left = random.choice([True, False])
             
+            # Build full video paths
+            trait_folder = trait.lower().replace(" ", "_")
+            
+            if high_on_left:
+                video_left = high_video
+                video_right = low_video
+                video_left_path = os.path.join(
+                    self.config.VIDEO_BASE_PATH, trait_folder, "high", high_video
+                )
+                video_right_path = os.path.join(
+                    self.config.VIDEO_BASE_PATH, trait_folder, "low", low_video
+                )
+            else:
+                video_left = low_video
+                video_right = high_video
+                video_left_path = os.path.join(
+                    self.config.VIDEO_BASE_PATH, trait_folder, "low", low_video
+                )
+                video_right_path = os.path.join(
+                    self.config.VIDEO_BASE_PATH, trait_folder, "high", high_video
+                )
+            
             practice_trial = {
                 "trial_id": f"practice_{i + 1}",
                 "trait": trait,
-                "video_left": high_video if high_on_left else low_video,
-                "video_right": low_video if high_on_left else high_video,
+                "video_left": video_left,
+                "video_right": video_right,
+                "video_left_path": video_left_path,
+                "video_right_path": video_right_path,
                 "high_video": high_video,
                 "low_video": low_video,
                 "high_position": "left" if high_on_left else "right",

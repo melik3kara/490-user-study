@@ -1,0 +1,13 @@
+{
+  "participant_id": "22203094",
+  "session": 1,
+  "total_trials": 2,
+  "responses": {
+    "left": 1,
+    "right": 1
+  },
+  "mean_response_time": 3.14735,
+  "high_choice_count": 2,
+  "high_choice_rate": 1.0,
+  "experiment_duration": 60.72044212499986
+}

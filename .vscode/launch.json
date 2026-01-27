@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Experiment",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/user_study_project/main_experiment.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/user_study_project",
+            "python": "/opt/miniconda3/envs/psychopy-env/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/user_study_project"
+            }
+        },
+        {
+            "name": "Test Trials",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/user_study_project/test_trials.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/user_study_project",
+            "python": "/opt/miniconda3/envs/psychopy-env/bin/python"
+        }
+    ]
+}

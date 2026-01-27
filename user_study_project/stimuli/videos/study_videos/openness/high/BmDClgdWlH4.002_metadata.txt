@@ -1,0 +1,4 @@
+Video: BmDClgdWlH4.002.mp4
+Trait: openness
+Level: high
+Score: 0.9778

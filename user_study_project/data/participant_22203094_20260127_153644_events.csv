@@ -1,0 +1,4 @@
+timestamp,event_type,trial_id,details,frame_number
+1.9605868750004447,trial_start,practice_1,,0
+1.9652386249999836,fixation_onset,practice_1,,
+2.7324580833328582,video_onset,practice_1,-fXqnCljdm0.003.mp4|84emxO86qa8.001.mp4,61

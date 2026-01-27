@@ -39,6 +39,16 @@ from datetime import datetime
 from psychopy import visual, core, event, gui, monitors
 from psychopy import logging as psychopy_logging
 
+# Video playback with opencv (more reliable on macOS)
+try:
+    import cv2
+    import numpy as np
+    from PIL import Image
+    CV2_AVAILABLE = True
+except ImportError:
+    CV2_AVAILABLE = False
+    print("WARNING: opencv-python not available. Video playback may be limited.")
+
 # Local imports
 import config
 from trial_manager import TrialManager
@@ -315,17 +325,16 @@ class PairwisePerceptionExperiment:
         """Generate trial list using the trial manager."""
         self.trial_manager = TrialManager(config)
         
-        # Generate trials
-        # TODO: Pass actual stimulus dictionary when available
+        # Generate trials - will scan video files from VIDEO_BASE_PATH
         self.trial_manager.generate_trial_list(
             self.participant_id,
-            stimuli_dict=config.STIMULI_PLACEHOLDER
+            stimuli_dict=None  # Load from actual video files
         )
         
         # Generate practice trials if enabled
         if config.INCLUDE_PRACTICE:
             self.trial_manager.generate_practice_trials(
-                stimuli_dict=config.STIMULI_PLACEHOLDER
+                stimuli_dict=None  # Use subset of real videos
             )
         
         # Print trial summary
@@ -382,54 +391,157 @@ class PairwisePerceptionExperiment:
     
     def show_videos(self, trial, num_frames):
         """
-        Display two videos side-by-side for a specified number of frames.
+        Display two videos side-by-side for a specified duration.
+        Uses OpenCV for reliable video playback on macOS.
         
         Parameters
         ----------
         trial : dict
             Trial dictionary with video information.
         num_frames : int
-            Number of frames to display videos.
+            Number of frames (used as fallback timeout).
             
         Returns
         -------
         float
             Timestamp when videos first appeared.
-            
-        TODO: Replace placeholder drawing with actual MovieStim playback
-        ======================================================================
-        VIDEO PLAYBACK IMPLEMENTATION
-        ======================================================================
-        When actual videos are available, replace the placeholder code with:
-        
-        # Load videos
-        video_left_path = os.path.join('stimuli', 'videos', trial['video_left'])
-        video_right_path = os.path.join('stimuli', 'videos', trial['video_right'])
-        
-        video_left = visual.MovieStim3(
-            win=self.win,
-            filename=video_left_path,
-            size=(config.VIDEO_WIDTH, config.VIDEO_HEIGHT),
-            pos=self.left_pos,
-        )
-        
-        video_right = visual.MovieStim3(
-            win=self.win,
-            filename=video_right_path,
-            size=(config.VIDEO_WIDTH, config.VIDEO_HEIGHT),
-            pos=self.right_pos,
-        )
-        
-        # Playback loop
-        while video_left.status != visual.FINISHED:
-            video_left.draw()
-            video_right.draw()
-            self.win.flip()
-            
-            if event.getKeys([config.KEY_QUIT]):
-                self.quit_experiment()
-        ======================================================================
         """
+        onset_time = None
+        
+        # Get video paths from trial
+        video_left_path = trial.get('video_left_path', '')
+        video_right_path = trial.get('video_right_path', '')
+        
+        # Check if video files exist
+        if not os.path.exists(video_left_path) or not os.path.exists(video_right_path):
+            print(f"WARNING: Video files not found!")
+            print(f"  Left: {video_left_path}")
+            print(f"  Right: {video_right_path}")
+            return self._show_video_placeholders(trial, num_frames)
+        
+        if not CV2_AVAILABLE:
+            print("WARNING: OpenCV not available, using placeholders")
+            return self._show_video_placeholders(trial, num_frames)
+        
+        try:
+            print(f"Loading videos: {trial['video_left']} vs {trial['video_right']}")
+            
+            # Open video files with OpenCV
+            cap_left = cv2.VideoCapture(video_left_path)
+            cap_right = cv2.VideoCapture(video_right_path)
+            
+            if not cap_left.isOpened() or not cap_right.isOpened():
+                print("ERROR: Could not open video files")
+                cap_left.release()
+                cap_right.release()
+                return self._show_video_placeholders(trial, num_frames)
+            
+            # Get video properties
+            fps = cap_left.get(cv2.CAP_PROP_FPS) or 30
+            total_frames = int(cap_left.get(cv2.CAP_PROP_FRAME_COUNT))
+            
+            # Create ImageStim for displaying video frames
+            video_stim_left = visual.ImageStim(
+                win=self.win,
+                size=(config.VIDEO_WIDTH, config.VIDEO_HEIGHT),
+                pos=self.left_pos,
+            )
+            video_stim_right = visual.ImageStim(
+                win=self.win,
+                size=(config.VIDEO_WIDTH, config.VIDEO_HEIGHT),
+                pos=self.right_pos,
+            )
+            
+            frame_count = 0
+            video_clock = core.Clock()
+            
+            while True:
+                # Read frames from both videos
+                ret_left, frame_left = cap_left.read()
+                ret_right, frame_right = cap_right.read()
+                
+                # Stop if either video ends
+                if not ret_left or not ret_right:
+                    break
+                
+                # Convert BGR to RGB and create PIL Image (most reliable for PsychoPy)
+                frame_left = cv2.cvtColor(frame_left, cv2.COLOR_BGR2RGB)
+                frame_right = cv2.cvtColor(frame_right, cv2.COLOR_BGR2RGB)
+                
+                # Use PIL Image - PsychoPy handles this correctly
+                pil_left = Image.fromarray(frame_left)
+                pil_right = Image.fromarray(frame_right)
+                
+                # Update stimuli with PIL images
+                video_stim_left.setImage(pil_left)
+                video_stim_right.setImage(pil_right)
+                
+                # Draw frames
+                video_stim_left.draw()
+                video_stim_right.draw()
+                
+                flip_time = self.win.flip()
+                frame_count += 1
+                self.frame_count += 1
+                
+                # Record onset on first frame
+                if frame_count == 1:
+                    onset_time = self.data_logger.log_event(
+                        'video_onset',
+                        trial_id=trial['trial_id'],
+                        details=f"{trial['video_left']}|{trial['video_right']}",
+                        frame_number=self.frame_count
+                    )
+                    
+                    # EyeLink markers
+                    self.eyelink.send_message(f"VIDEO_ONSET {trial['trial_id']}")
+                    self.eyelink.send_variable("video_left", trial['video_left'])
+                    self.eyelink.send_variable("video_right", trial['video_right'])
+                    self.eyelink.send_variable("trait", trial['trait'])
+                    self.eyelink.send_variable("high_position", trial['high_position'])
+                    
+                    # Define interest areas
+                    self.eyelink.define_video_interest_areas(
+                        self.left_pos,
+                        self.right_pos,
+                        config.VIDEO_WIDTH,
+                        config.VIDEO_HEIGHT
+                    )
+                
+                # Check for quit
+                if event.getKeys(keyList=[config.KEY_QUIT]):
+                    cap_left.release()
+                    cap_right.release()
+                    self.quit_experiment()
+                
+                # Sync to video framerate
+                target_time = frame_count / fps
+                while video_clock.getTime() < target_time:
+                    pass
+            
+            # Release video captures
+            cap_left.release()
+            cap_right.release()
+            
+            # Log video offset
+            self.data_logger.log_event(
+                'video_offset',
+                trial_id=trial['trial_id'],
+                frame_number=self.frame_count
+            )
+            self.eyelink.send_message(f"VIDEO_OFFSET {trial['trial_id']}")
+            
+            print(f"Played {frame_count} frames")
+            return onset_time
+            
+        except Exception as e:
+            print(f"Error loading videos: {e}")
+            import traceback
+            traceback.print_exc()
+            return self._show_video_placeholders(trial, num_frames)
+    
+    def _show_video_placeholders(self, trial, num_frames):
+        """Show placeholder rectangles when videos can't be loaded."""
         onset_time = None
         
         # Update placeholder labels with video filenames
@@ -443,7 +555,6 @@ class PairwisePerceptionExperiment:
             self.stimuli['left_label'].draw()
             self.stimuli['right_label'].draw()
             
-            # Flip and record onset time on first frame
             flip_time = self.win.flip()
             self.frame_count += 1
             
@@ -454,17 +565,11 @@ class PairwisePerceptionExperiment:
                     details=f"{trial['video_left']}|{trial['video_right']}",
                     frame_number=self.frame_count
                 )
-                
-                # ==============================================================
-                # EYELINK: Mark video onset
-                # ==============================================================
                 self.eyelink.send_message(f"VIDEO_ONSET {trial['trial_id']}")
                 self.eyelink.send_variable("video_left", trial['video_left'])
                 self.eyelink.send_variable("video_right", trial['video_right'])
                 self.eyelink.send_variable("trait", trial['trait'])
                 self.eyelink.send_variable("high_position", trial['high_position'])
-                
-                # Define interest areas for this trial
                 self.eyelink.define_video_interest_areas(
                     self.left_pos,
                     self.right_pos,
@@ -472,20 +577,15 @@ class PairwisePerceptionExperiment:
                     config.VIDEO_HEIGHT
                 )
             
-            # Check for quit
             if event.getKeys(keyList=[config.KEY_QUIT]):
                 self.quit_experiment()
         
-        # Log video offset
-        offset_time = self.data_logger.log_event(
+        # Log video offset for placeholders
+        self.data_logger.log_event(
             'video_offset',
             trial_id=trial['trial_id'],
             frame_number=self.frame_count
         )
-        
-        # ==================================================================
-        # EYELINK: Mark video offset
-        # ==================================================================
         self.eyelink.send_message(f"VIDEO_OFFSET {trial['trial_id']}")
         
         return onset_time
@@ -504,8 +604,8 @@ class PairwisePerceptionExperiment:
         tuple
             (response, response_time, response_timestamp)
         """
-        # Set question text
-        question_text = config.QUESTION_TEMPLATE.format(trait=trial['trait'])
+        # Set question text - use descriptive question for the trait
+        question_text = config.QUESTION_TEMPLATES[trial['trait']]
         self.stimuli['question'].text = question_text
         
         # Clear event buffer

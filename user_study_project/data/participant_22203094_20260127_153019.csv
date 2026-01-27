@@ -1,0 +1,2 @@
+participant_id,session,trial_id,trait,video_left,video_right,high_position,response,response_correct,response_time,confidence_rating,trial_start_time,video_onset_time,video_offset_time,response_time_absolute
+22203094,1,1,Openness,jSw-grsJCnE.003.mp4,PWM-bKcs2p8.004.mp4,left,right,False,2.3610,3,26.4165,26.9917,42.2314,44.6116

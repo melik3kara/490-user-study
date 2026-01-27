@@ -1,0 +1,10 @@
+timestamp,event_type,trial_id,details,frame_number
+1.584573791667026,trial_start,practice_1,,0
+1.5853348333339454,fixation_onset,practice_1,,
+2.208594458334119,video_onset,practice_1,3zAyM2edy1g.004.mp4|3S8QUGYVf_w.003.mp4,61
+14.365719083333715,video_offset,practice_1,,427
+18.134005458334286,response,practice_1,"response=right,rt=3.7611",427
+20.315281291666906,confidence,practice_1,rating=4,
+22.067207041666734,trial_start,1,,457
+22.067758666667032,fixation_onset,1,,
+22.670733041666608,video_onset,1,84emxO86qa8.005.mp4|PHv6CzBIC5E.004.mp4,518

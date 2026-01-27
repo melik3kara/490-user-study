@@ -1,0 +1,7 @@
+{
+    "python.defaultInterpreterPath": "/opt/miniconda3/envs/psychopy-env/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/user_study_project"
+    ]
+}

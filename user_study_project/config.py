@@ -33,7 +33,7 @@ BACKGROUND_COLOR = (0.5, 0.5, 0.5)  # mid-gray
 # ==============================================================================
 
 FIXATION_DURATION = 1.0  # Duration of fixation cross
-VIDEO_DURATION = 6.0  # Duration of video presentation
+VIDEO_DURATION = 16.0  # Duration of video presentation (videos are ~15-16 seconds)
 INTER_TRIAL_INTERVAL = 0.5  # Duration between trials
 RESPONSE_TIMEOUT = None  # None = wait indefinitely for response
 
@@ -55,18 +55,27 @@ FIXATION_LINE_WIDTH = 3
 # PERSONALITY TRAITS
 # ==============================================================================
 
-# The four traits used in this experiment
+# The five traits used in this experiment
 # Each trial compares HIGH vs LOW within the SAME trait
 TRAITS = [
     "Extraversion",
     "Agreeableness",
     "Conscientiousness",
-    "Emotional Stability"
+    "Emotional Stability",
+    "Openness"
 ]
 
-# Question format for each trait
-# {trait} will be replaced with the actual trait name
-QUESTION_TEMPLATE = "Which person looks MORE {trait}?"
+# Descriptive questions for each trait
+QUESTION_TEMPLATES = {
+    "Extraversion": "Which person appears more outgoing, sociable, and energetic?",
+    "Agreeableness": "Which person appears more friendly, cooperative, and warm?",
+    "Conscientiousness": "Which person appears more organized, responsible, and reliable?",
+    "Emotional Stability": "Which person appears more calm, emotionally stable, and resilient?",
+    "Openness": "Which person appears more open to new experiences, creative, and curious?"
+}
+
+# Base video folder path
+VIDEO_BASE_PATH = "stimuli/videos/study_videos"
 
 # ==============================================================================
 # RESPONSE SETTINGS
@@ -136,17 +145,18 @@ INTEREST_AREA_PADDING = 20  # pixels of padding around video
 # TRIAL STRUCTURE SETTINGS
 # ==============================================================================
 
-# Number of repetitions per trait
-# TODO: Adjust based on final stimulus set
-TRIALS_PER_TRAIT = 4  # Placeholder value
+# Number of trials per trait (each high video paired with each low video)
+# With 5 high and 5 low videos per trait: 5 x 5 = 25 trials per trait
+TRIALS_PER_TRAIT = 25  # Full factorial design
 
 # Randomization settings
-RANDOMIZE_TRIAL_ORDER = True
+RANDOMIZE_TRIAL_ORDER = True  # Shuffle trials so same trait doesn't repeat
 RANDOMIZE_VIDEO_POSITIONS = True  # Counterbalance left/right placement
+MIN_TRAIT_SPACING = 2  # Minimum number of trials between same trait
 
 # Practice trials
 INCLUDE_PRACTICE = True
-NUM_PRACTICE_TRIALS = 2
+NUM_PRACTICE_TRIALS = 1
 
 # Break settings
 ENABLE_BREAKS = True
@@ -158,6 +168,9 @@ TRIALS_BETWEEN_BREAKS = 20
 
 WELCOME_TEXT = """
 Welcome to the Personality Perception Study!
+
+This research is conducted under the supervision of
+Prof. Dr. Uğur Güdükbay at Bilkent University.
 
 In this experiment, you will view pairs of short video clips
 showing different people.
@@ -174,7 +187,7 @@ INSTRUCTIONS:
 1. First, you will see a fixation cross (+) in the center of the screen.
    Please focus your eyes on this cross.
 
-2. Two videos will then appear side-by-side for 6 seconds.
+2. Two videos will then appear side-by-side for about 16 seconds.
    Watch both videos carefully.
 
 3. After the videos end, you will see a question asking

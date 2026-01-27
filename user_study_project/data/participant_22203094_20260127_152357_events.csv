@@ -1,0 +1,16 @@
+timestamp,event_type,trial_id,details,frame_number
+2.610023416666081,trial_start,practice_1,,0
+2.611445999999887,fixation_onset,practice_1,,
+3.2314715833326773,video_onset,practice_1,-fXqnCljdm0.003.mp4|84emxO86qa8.001.mp4,61
+15.40332058333297,video_offset,practice_1,,427
+16.801148041666238,response,practice_1,"response=right,rt=1.3921",427
+19.45320508333316,confidence,practice_1,rating=4,
+20.36754000000019,trial_start,1,,457
+20.36868874999982,fixation_onset,1,,
+20.94683729166627,video_onset,1,KGRUaRe3r7I.001.mp4|PHv6CzBIC5E.001.mp4,518
+36.19895645833276,video_offset,1,,976
+37.32472095833327,response,1,"response=right,rt=1.1215",976
+38.29681979166617,confidence,1,rating=4,
+38.53432429166605,trial_start,2,,1006
+38.53544574999978,fixation_onset,2,,
+39.23984487500002,video_onset,2,wAl_Pm7xG3A.001.mp4|PHv6CzBIC5E.001.mp4,1067

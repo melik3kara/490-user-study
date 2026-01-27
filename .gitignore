@@ -1,0 +1,38 @@
+# Python virtual environments - DO NOT COMMIT
+.venv/
+venv/
+env/
+.conda/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# IDE settings
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Experiment output data (keep structure, ignore contents)
+data/*.csv
+data/*.json
+eyelink_data/*.edf
+trials/*.csv
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp

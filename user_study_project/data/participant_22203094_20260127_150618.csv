@@ -1,0 +1,2 @@
+participant_id,session,trial_id,trait,video_left,video_right,high_position,response,response_correct,response_time,confidence_rating,trial_start_time,video_onset_time,video_offset_time,response_time_absolute
+22203094,1,1,Conscientiousness,video_J.mp4,video_L.mp4,left,right,False,0.6870,4,40.5414,41.0390,44.0310,44.7225

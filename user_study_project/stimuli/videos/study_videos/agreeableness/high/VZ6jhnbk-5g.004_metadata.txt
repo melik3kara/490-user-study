@@ -1,0 +1,4 @@
+Video: VZ6jhnbk-5g.004.mp4
+Trait: agreeableness
+Level: high
+Score: 0.9231

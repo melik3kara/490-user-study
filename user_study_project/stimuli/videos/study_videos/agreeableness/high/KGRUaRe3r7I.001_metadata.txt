@@ -1,0 +1,4 @@
+Video: KGRUaRe3r7I.001.mp4
+Trait: agreeableness
+Level: high
+Score: 0.9341

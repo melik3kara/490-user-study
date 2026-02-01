@@ -41,9 +41,9 @@ RESPONSE_TIMEOUT = None  # None = wait indefinitely for response
 # STIMULI SETTINGS
 # ==============================================================================
 
-# Video display settings (single centered video)
-VIDEO_WIDTH = 800  # pixels (larger since only one video)
-VIDEO_HEIGHT = 600  # pixels
+# Video display settings (single centered video - nearly fullscreen)
+VIDEO_WIDTH = 1600  # pixels (large, nearly fullscreen)
+VIDEO_HEIGHT = 900  # pixels (16:9 aspect ratio)
 VIDEO_POSITION = (0, 0)  # center of screen
 
 # Sequential video presentation settings

@@ -33,38 +33,48 @@ Her deneme şu aşamalardan oluşmaktadır:
 ├─────────────────────────────────────────────────────────────────┤
 │  2. "Video 1" Etiketi │  1 saniye                               │
 ├─────────────────────────────────────────────────────────────────┤
-│  3. Video 1 Sunumu    │  ~16 saniye (video süresi kadar)        │
+│  3. Soru Önizleme     │  SPACE'e basana kadar                   │
+│     "Hangi kişi daha [özellik] görünüyor?"                      │
+│     (Press SPACE to start watching)                             │
+├─────────────────────────────────────────────────────────────────┤
+│  4. Fiksasyon (+)     │  1 saniye                               │
+├─────────────────────────────────────────────────────────────────┤
+│  5. "Video 1" Etiketi │  1 saniye                               │
+├─────────────────────────────────────────────────────────────────┤
+│  6. Video 1 Sunumu    │  ~16 saniye (video süresi kadar)        │
 │     ┌─────────────┐                                             │
 │     │             │  ← Ekran ortasında tek video                │
 │     │   VIDEO 1   │                                             │
 │     │             │                                             │
 │     └─────────────┘                                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  4. Ara Fiksasyon (+) │  1 saniye                               │
+│  7. Ara Fiksasyon (+) │  1 saniye                               │
 ├─────────────────────────────────────────────────────────────────┤
-│  5. "Video 2" Etiketi │  1 saniye                               │
+│  8. "Video 2" Etiketi │  1 saniye                               │
 ├─────────────────────────────────────────────────────────────────┤
-│  6. Video 2 Sunumu    │  ~16 saniye (video süresi kadar)        │
+│  9. Video 2 Sunumu    │  ~16 saniye (video süresi kadar)        │
 │     ┌─────────────┐                                             │
 │     │             │  ← Aynı pozisyonda ikinci video             │
 │     │   VIDEO 2   │                                             │
 │     │             │                                             │
 │     └─────────────┘                                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  7. Soru Ekranı       │  Yanıt verene kadar                     │
-│     "Hangi kişi daha [özellik] görünüyor?"                      │
+│ 10. Seçim Ekranı      │  Yanıt verene kadar                     │
+│     "Which person appeared MORE like the description?"          │
+│     Press 1 for FIRST video / Press 2 for SECOND video         │
 ├─────────────────────────────────────────────────────────────────┤
-│  8. Yanıt             │  1 = Birinci video, 2 = İkinci video    │
+│ 11. Güven Derecesi    │  1-5 arası (1=çok belirsiz, 5=çok emin) │
 ├─────────────────────────────────────────────────────────────────┤
-│  9. Güven Derecesi    │  1-5 arası (1=çok belirsiz, 5=çok emin) │
-├─────────────────────────────────────────────────────────────────┤
-│ 10. Boşluk (ITI)      │  0.5 saniye                             │
+│ 12. Boşluk (ITI)      │  0.5 saniye                             │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Not:** Videolar aynı ekran pozisyonunda (ortada) sırayla gösterilir. Bu tasarım, 
-göz izleme heatmap'lerinin video pozisyonundan etkilenmemesini sağlar ve 
-katılımcıların videoların hangi bölgelerine odaklandığını analiz etmeyi kolaylaştırır.
+**Not:** 
+- **Soru Önce:** Katılımcı videoları izlemeden önce hangi kişilik özelliğine 
+  dikkat etmesi gerektiğini bilir.
+- **Videolar Sırayla:** Aynı ekran pozisyonunda (ortada) gösterilir. Bu tasarım, 
+  göz izleme heatmap'lerinin video pozisyonundan etkilenmemesini sağlar.
+- **Seçim Ayrı:** Videoları izledikten sonra basit bir seçim ekranı görüntülenir.
 
 ### 2.3 Soru Formatları
 

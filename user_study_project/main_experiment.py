@@ -213,7 +213,7 @@ class PairwisePerceptionExperiment:
         # Response options (First vs Second)
         self.stimuli['response_options'] = visual.TextStim(
             win=self.win,
-            text='Press 1 for FIRST video     |     Press 2 for SECOND video',
+            text='Press 1 for FIRST video\nPress 2 for SECOND video',
             pos=(0, -100),
             height=28,
             color='black',
@@ -738,6 +738,122 @@ class PairwisePerceptionExperiment:
         
         return response, response_time, response_timestamp
     
+    def show_question_preview(self, trial):
+        """
+        Show the question before videos so participant knows what to look for.
+        
+        Parameters
+        ----------
+        trial : dict
+            Trial dictionary with trait information.
+        """
+        question_text = config.QUESTION_TEMPLATES[trial['trait']]
+        self.stimuli['question'].text = question_text
+        
+        # Create instruction text for this screen
+        preview_instruction = visual.TextStim(
+            win=self.win,
+            text='Watch both videos carefully, then make your selection.\n\nPress SPACE to start watching.',
+            pos=(0, -150),
+            height=24,
+            color='black',
+        )
+        
+        event.clearEvents()
+        
+        while True:
+            self.stimuli['question'].draw()
+            preview_instruction.draw()
+            self.win.flip()
+            
+            keys = event.getKeys(keyList=['space', config.KEY_QUIT])
+            if 'space' in keys:
+                break
+            if config.KEY_QUIT in keys:
+                self.quit_experiment()
+    
+    def get_selection(self, trial):
+        """
+        Show selection screen after videos with question text.
+        
+        Parameters
+        ----------
+        trial : dict
+            Trial dictionary.
+            
+        Returns
+        -------
+        tuple
+            (response, response_time, response_timestamp)
+        """
+        # Get the question for this trial
+        question_text = trial.get('question', 'Which person appeared MORE like the description?')
+        
+        # Question text (the trait description)
+        question_stim = visual.TextStim(
+            win=self.win,
+            text=question_text,
+            pos=(0, 150),
+            height=36,
+            color='black',
+            wrapWidth=1400,
+        )
+        
+        # Selection prompt
+        selection_prompt = visual.TextStim(
+            win=self.win,
+            text='Select your answer:',
+            pos=(0, 50),
+            height=28,
+            color='gray',
+        )
+        
+        event.clearEvents()
+        response_clock = core.Clock()
+        
+        response = None
+        response_time = None
+        response_timestamp = None
+        
+        while response is None:
+            question_stim.draw()
+            selection_prompt.draw()
+            self.stimuli['response_options'].draw()
+            self.win.flip()
+            
+            keys = event.getKeys(
+                keyList=[config.KEY_FIRST, config.KEY_SECOND, config.KEY_QUIT],
+                timeStamped=response_clock
+            )
+            
+            for key, rt in keys:
+                if key == config.KEY_QUIT:
+                    self.quit_experiment()
+                elif key == config.KEY_FIRST:
+                    response = 'first'
+                    response_time = rt
+                elif key == config.KEY_SECOND:
+                    response = 'second'
+                    response_time = rt
+            
+            if config.RESPONSE_TIMEOUT is not None:
+                if response_clock.getTime() > config.RESPONSE_TIMEOUT:
+                    response = 'timeout'
+                    response_time = config.RESPONSE_TIMEOUT
+        
+        response_timestamp = self.data_logger.log_event(
+            'response',
+            trial_id=trial['trial_id'],
+            details=f"response={response},rt={response_time:.4f}",
+            frame_number=self.frame_count
+        )
+        
+        self.eyelink.send_message(f"RESPONSE {trial['trial_id']} {response}")
+        self.eyelink.send_variable("response", response)
+        self.eyelink.send_variable("response_time", f"{response_time:.4f}")
+        
+        return response, response_time, response_timestamp
+
     def get_confidence_rating(self, trial):
         """
         Collect confidence rating from participant.
@@ -860,18 +976,21 @@ class PairwisePerceptionExperiment:
             frame_number=self.frame_count
         )
         
-        # 1. Fixation cross
+        # 1. Show question first (so participant knows what to look for)
+        self.show_question_preview(trial)
+        
+        # 2. Fixation cross
         self.data_logger.log_event('fixation_onset', trial_id=trial_id)
         self.eyelink.send_message("FIXATION_ONSET")
         self.show_fixation(self.fixation_frames)
         
-        # 2. Video presentation (sequential: first then second)
+        # 3. Video presentation (sequential: first then second)
         video_timing = self.show_videos(trial, self.video_frames)
         
-        # 3. Question and response
-        response, response_time, response_timestamp = self.get_response(trial)
+        # 4. Selection screen (1 or 2)
+        response, response_time, response_timestamp = self.get_selection(trial)
         
-        # 4. Confidence rating
+        # 5. Confidence rating
         confidence = self.get_confidence_rating(trial)
         
         # ==================================================================

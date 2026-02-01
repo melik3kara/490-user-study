@@ -42,22 +42,40 @@ Her deneme şu aşamalardan oluşmaktadır:
 ┌─────────────────────────────────────────────────────────────────┐
 │  1. Fiksasyon (+)     │  1 saniye                               │
 ├─────────────────────────────────────────────────────────────────┤
-│  2. Video Sunumu      │  ~16 saniye (video süresi kadar)        │
-│     ┌───────┐ ┌───────┐                                         │
-│     │ Video │ │ Video │  ← Yan yana iki video                   │
-│     │  SOL  │ │  SAĞ  │                                         │
-│     └───────┘ └───────┘                                         │
+│  2. "Video 1" Etiketi │  1 saniye                               │
 ├─────────────────────────────────────────────────────────────────┤
-│  3. Soru Ekranı       │  Yanıt verene kadar                     │
+│  3. Video 1 Sunumu    │  ~16 saniye (video süresi kadar)        │
+│     ┌─────────────┐                                             │
+│     │             │  ← Ekran ortasında tek video                │
+│     │   VIDEO 1   │                                             │
+│     │             │                                             │
+│     └─────────────┘                                             │
+├─────────────────────────────────────────────────────────────────┤
+│  4. Ara Fiksasyon (+) │  1 saniye                               │
+├─────────────────────────────────────────────────────────────────┤
+│  5. "Video 2" Etiketi │  1 saniye                               │
+├─────────────────────────────────────────────────────────────────┤
+│  6. Video 2 Sunumu    │  ~16 saniye (video süresi kadar)        │
+│     ┌─────────────┐                                             │
+│     │             │  ← Aynı pozisyonda ikinci video             │
+│     │   VIDEO 2   │                                             │
+│     │             │                                             │
+│     └─────────────┘                                             │
+├─────────────────────────────────────────────────────────────────┤
+│  7. Soru Ekranı       │  Yanıt verene kadar                     │
 │     "Hangi kişi daha [özellik] görünüyor?"                      │
 ├─────────────────────────────────────────────────────────────────┤
-│  4. Yanıt             │  Sol/Sağ ok tuşları                     │
+│  8. Yanıt             │  1 = Birinci video, 2 = İkinci video    │
 ├─────────────────────────────────────────────────────────────────┤
-│  5. Güven Derecesi    │  1-5 arası (1=çok belirsiz, 5=çok emin) │
+│  9. Güven Derecesi    │  1-5 arası (1=çok belirsiz, 5=çok emin) │
 ├─────────────────────────────────────────────────────────────────┤
-│  6. Boşluk (ITI)      │  0.5 saniye                             │
+│ 10. Boşluk (ITI)      │  0.5 saniye                             │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+**Not:** Videolar aynı ekran pozisyonunda (ortada) sırayla gösterilir. Bu tasarım, 
+göz izleme heatmap'lerinin video pozisyonundan etkilenmemesini sağlar ve 
+katılımcıların videoların hangi bölgelerine odaklandığını analiz etmeyi kolaylaştırır.
 
 ### 2.3 Soru Formatları
 
@@ -346,12 +364,60 @@ user_study_project/
 
 ---
 
-## 9. Etik Hususlar
+## 9. Onay ve Bilgilendirme Düzenlemeleri
 
-- Katılımcılar bilgilendirilmiş onam formu imzalar
-- Kişisel veriler anonim tutulur
-- Göz izleme verileri güvenli şekilde saklanır
-- Katılımcılar istedikleri zaman çalışmadan çekilebilir
+### 9.1 Katılımcı Onay Formu (Consent Form)
+
+Deney başlamadan önce, katılımcılara ekranda aşağıdaki bilgilendirilmiş onam formu gösterilir. Katılımcılar "I Agree - Start Study" butonuna tıklayarak onay verdikten sonra deney başlar:
+
+> **INFORMED CONSENT FORM**
+>
+> You are invited to participate in a research study on personality perception from face videos.
+>
+> Before you decide to participate, please read the following information carefully:
+>
+> • You must be at least 18 years old to participate in this study.
+>
+> • Your participation is completely voluntary. You may withdraw from the study at any time without any penalty or negative consequences.
+>
+> • All data will be collected and stored anonymously. No personally identifying information will be recorded.
+>
+> • The study will take approximately 15 minutes to complete.
+>
+> • You must not be currently enrolled in any course taught by Prof. Dr. Uğur Güdükbay.
+>
+> • During the study, you will view pairs of short, silent face videos displayed side-by-side on a screen while your eye movements are recorded using an EyeLink 1000 eye tracker. After viewing each pair, you will answer a personality-related comparison question and indicate your confidence in your response.
+>
+> • All data will be used solely for scientific research purposes.
+>
+> **Supervisor:** Prof. Dr. Uğur Güdükbay  
+> Department of Computer Engineering  
+> Bilkent University
+>
+> By clicking 'I Agree', you confirm that you have read and understood the above information, that you meet the eligibility criteria, and that you voluntarily agree to participate.
+>
+> **[I Agree - Start Study]** ← Yeşil buton
+
+### 9.2 Etik İlkeler
+
+| İlke | Uygulama |
+|------|----------|
+| **Gönüllü Katılım** | Katılımcılar istediği zaman ceza olmaksızın çalışmadan çekilebilir |
+| **Yaş Kriteri** | Minimum 18 yaş |
+| **Anonimlik** | Kişisel tanımlayıcı bilgi toplanmaz |
+| **Veri Güvenliği** | Tüm veriler anonim olarak saklanır |
+| **Bilimsel Kullanım** | Veriler yalnızca araştırma amaçlı kullanılır |
+| **Ders Kısıtlaması** | Katılımcılar Prof. Dr. Uğur Güdükbay'dan ders almıyor olmalı |
+| **Süre Bilgisi** | Yaklaşık 15 dakika |
+
+### 9.3 Onay Ekranı Görseli
+
+Deney yazılımı aşağıdaki ekranları içerir:
+
+1. **Consent Form Ekranı** - Yukarıdaki bilgilendirilmiş onam metni ve "I Agree - Start Study" butonu
+2. **Hoş Geldiniz Ekranı** - Çalışma hakkında genel bilgi ve danışman bilgisi
+3. **Talimatlar Ekranı** - Görevin nasıl yapılacağına dair detaylı açıklama
+4. **Teşekkür Ekranı** - Çalışma sonunda gösterilen özet ve teşekkür
 
 ---
 

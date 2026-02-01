@@ -475,6 +475,40 @@ class EyeLinkManager:
             "RIGHT_VIDEO"
         )
     
+    def define_single_video_interest_area(self, video_pos, video_width, video_height):
+        """
+        Define interest area for a single centered video.
+        
+        Parameters
+        ----------
+        video_pos : tuple
+            (x, y) center position of video in pixels.
+        video_width : int
+            Width of video in pixels.
+        video_height : int
+            Height of video in pixels.
+        """
+        padding = self.config.INTEREST_AREA_PADDING
+        half_w = video_width // 2 + padding
+        half_h = video_height // 2 + padding
+        
+        # Convert from PsychoPy coordinates (center = 0,0) to EyeLink (top-left = 0,0)
+        screen_cx = self.config.SCREEN_WIDTH // 2
+        screen_cy = self.config.SCREEN_HEIGHT // 2
+        
+        # Video IA (centered)
+        vx, vy = video_pos
+        vx_screen = screen_cx + vx
+        vy_screen = screen_cy - vy  # Flip Y axis
+        self.define_interest_area(
+            1,
+            int(vx_screen - half_w),
+            int(vy_screen - half_h),
+            int(vx_screen + half_w),
+            int(vy_screen + half_h),
+            "VIDEO"
+        )
+    
     # ==========================================================================
     # UTILITY METHODS
     # ==========================================================================

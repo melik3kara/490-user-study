@@ -41,10 +41,14 @@ RESPONSE_TIMEOUT = None  # None = wait indefinitely for response
 # STIMULI SETTINGS
 # ==============================================================================
 
-# Video display settings
-VIDEO_WIDTH = 640  # pixels
-VIDEO_HEIGHT = 480  # pixels
-VIDEO_SEPARATION = 100  # horizontal gap between videos in pixels
+# Video display settings (single centered video)
+VIDEO_WIDTH = 800  # pixels (larger since only one video)
+VIDEO_HEIGHT = 600  # pixels
+VIDEO_POSITION = (0, 0)  # center of screen
+
+# Sequential video presentation settings
+INTER_VIDEO_INTERVAL = 1.0  # Duration between first and second video (seconds)
+VIDEO_LABEL_DURATION = 1.0  # Duration to show "Video 1" or "Video 2" label before video
 
 # Fixation cross settings
 FIXATION_SIZE = 50  # pixels
@@ -81,9 +85,9 @@ VIDEO_BASE_PATH = "stimuli/videos/study_videos"
 # RESPONSE SETTINGS
 # ==============================================================================
 
-# Keyboard keys for left/right selection
-KEY_LEFT = "left"  # Left arrow key
-KEY_RIGHT = "right"  # Right arrow key
+# Keyboard keys for first/second video selection
+KEY_FIRST = "1"  # Key for selecting first video
+KEY_SECOND = "2"  # Key for selecting second video
 KEY_QUIT = "escape"  # Key to abort experiment
 
 # Confidence rating settings
@@ -105,16 +109,18 @@ LOG_COLUMNS = [
     "session",
     "trial_id",
     "trait",
-    "video_left",
-    "video_right",
-    "high_position",  # 'left' or 'right' - where the HIGH video was placed
-    "response",  # 'left' or 'right'
+    "video_first",  # First video shown
+    "video_second",  # Second video shown
+    "high_position",  # 'first' or 'second' - when the HIGH video was shown
+    "response",  # 'first' or 'second'
     "response_correct",  # Did they choose the HIGH video?
     "response_time",
     "confidence_rating",
     "trial_start_time",
-    "video_onset_time",
-    "video_offset_time",
+    "video1_onset_time",
+    "video1_offset_time",
+    "video2_onset_time",
+    "video2_offset_time",
     "response_time_absolute",
 ]
 
@@ -166,6 +172,50 @@ TRIALS_BETWEEN_BREAKS = 20
 # INSTRUCTION TEXTS
 # ==============================================================================
 
+# ==============================================================================
+# CONSENT FORM SETTINGS
+# ==============================================================================
+
+CONSENT_FORM_TEXT = """
+INFORMED CONSENT FORM
+
+You are invited to participate in a research study on personality perception from face videos.
+
+Before you decide to participate, please read the following information carefully:
+
+• You must be at least 18 years old to participate in this study.
+
+• Your participation is completely voluntary. You may withdraw from the study at any time
+  without any penalty or negative consequences.
+
+• All data will be collected and stored anonymously. No personally identifying information
+  will be recorded.
+
+• The study will take approximately 15 minutes to complete.
+
+• You must not be currently enrolled in any course taught by Prof. Dr. Uğur Güdükbay.
+
+• During the study, you will view pairs of short, silent face videos one after another
+  on a screen while your eye movements are recorded using an EyeLink 1000 eye tracker.
+  After viewing each pair, you will answer a personality-related comparison question
+  and indicate your confidence in your response.
+
+• All data will be used solely for scientific research purposes.
+
+
+Supervisor: Prof. Dr. Uğur Güdükbay
+Department of Computer Engineering
+Bilkent University
+
+
+By pressing SPACE, you confirm that you have read and understood the above information,
+that you meet the eligibility criteria, and that you voluntarily agree to participate.
+"""
+
+# ==============================================================================
+# INSTRUCTION TEXTS
+# ==============================================================================
+
 WELCOME_TEXT = """
 Welcome to the Personality Perception Study!
 
@@ -187,13 +237,15 @@ INSTRUCTIONS:
 1. First, you will see a fixation cross (+) in the center of the screen.
    Please focus your eyes on this cross.
 
-2. Two videos will then appear side-by-side for about 16 seconds.
-   Watch both videos carefully.
+2. You will then watch TWO videos, one after the other.
+   - First, "Video 1" will be shown (~16 seconds)
+   - Then, "Video 2" will be shown (~16 seconds)
+   Both videos appear in the same position on screen.
 
-3. After the videos end, you will see a question asking
-   which person looks MORE [trait].
+3. After both videos end, you will see a question asking
+   which person appears MORE [trait].
 
-4. Use the LEFT and RIGHT arrow keys to make your selection.
+4. Press 1 to select the FIRST video, or 2 to select the SECOND video.
 
 5. You may then be asked to rate your confidence (1-5).
 

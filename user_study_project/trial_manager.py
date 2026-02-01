@@ -3,7 +3,7 @@ Trial Manager for the Pairwise Personality Perception Experiment.
 
 This module handles trial generation, randomization, and management.
 It creates balanced trial lists ensuring proper counterbalancing of
-video positions (left/right) across traits and prevents consecutive
+video order (first/second) across traits and prevents consecutive
 trials of the same trait.
 """
 
@@ -187,45 +187,45 @@ class TrialManager:
             # Create all possible HIGH-LOW pairs (full factorial)
             for high_video in high_videos:
                 for low_video in low_videos:
-                    # Counterbalance left/right position
+                    # Counterbalance first/second order
                     # Use participant_id hash for consistency across sessions
-                    position_seed = hash(f"{participant_id}_{trait}_{high_video}_{low_video}")
-                    high_on_left = (position_seed % 2 == 0)
+                    order_seed = hash(f"{participant_id}_{trait}_{high_video}_{low_video}")
+                    high_first = (order_seed % 2 == 0)
                     
                     if self.config.RANDOMIZE_VIDEO_POSITIONS:
-                        high_on_left = random.choice([True, False])
+                        high_first = random.choice([True, False])
                     
-                    if high_on_left:
-                        video_left = high_video
-                        video_right = low_video
-                        high_position = "left"
+                    if high_first:
+                        video_first = high_video
+                        video_second = low_video
+                        high_position = "first"
                     else:
-                        video_left = low_video
-                        video_right = high_video
-                        high_position = "right"
+                        video_first = low_video
+                        video_second = high_video
+                        high_position = "second"
                     
                     # Get full video paths
                     trait_folder = trait.lower().replace(" ", "_")
-                    video_left_path = os.path.join(
+                    video_first_path = os.path.join(
                         self.config.VIDEO_BASE_PATH, 
                         trait_folder,
-                        "high" if high_on_left else "low",
-                        video_left
+                        "high" if high_first else "low",
+                        video_first
                     )
-                    video_right_path = os.path.join(
+                    video_second_path = os.path.join(
                         self.config.VIDEO_BASE_PATH,
                         trait_folder,
-                        "low" if high_on_left else "high",
-                        video_right
+                        "low" if high_first else "high",
+                        video_second
                     )
                     
                     trial = {
                         "trial_id": trial_id,
                         "trait": trait,
-                        "video_left": video_left,
-                        "video_right": video_right,
-                        "video_left_path": video_left_path,
-                        "video_right_path": video_right_path,
+                        "video_first": video_first,
+                        "video_second": video_second,
+                        "video_first_path": video_first_path,
+                        "video_second_path": video_second_path,
                         "high_video": high_video,
                         "low_video": low_video,
                         "high_position": high_position,
@@ -288,40 +288,40 @@ class TrialManager:
             
             high_video = high_videos[0]
             low_video = low_videos[0]
-            high_on_left = random.choice([True, False])
+            high_first = random.choice([True, False])
             
             # Build full video paths
             trait_folder = trait.lower().replace(" ", "_")
             
-            if high_on_left:
-                video_left = high_video
-                video_right = low_video
-                video_left_path = os.path.join(
+            if high_first:
+                video_first = high_video
+                video_second = low_video
+                video_first_path = os.path.join(
                     self.config.VIDEO_BASE_PATH, trait_folder, "high", high_video
                 )
-                video_right_path = os.path.join(
+                video_second_path = os.path.join(
                     self.config.VIDEO_BASE_PATH, trait_folder, "low", low_video
                 )
             else:
-                video_left = low_video
-                video_right = high_video
-                video_left_path = os.path.join(
+                video_first = low_video
+                video_second = high_video
+                video_first_path = os.path.join(
                     self.config.VIDEO_BASE_PATH, trait_folder, "low", low_video
                 )
-                video_right_path = os.path.join(
+                video_second_path = os.path.join(
                     self.config.VIDEO_BASE_PATH, trait_folder, "high", high_video
                 )
             
             practice_trial = {
                 "trial_id": f"practice_{i + 1}",
                 "trait": trait,
-                "video_left": video_left,
-                "video_right": video_right,
-                "video_left_path": video_left_path,
-                "video_right_path": video_right_path,
+                "video_first": video_first,
+                "video_second": video_second,
+                "video_first_path": video_first_path,
+                "video_second_path": video_second_path,
                 "high_video": high_video,
                 "low_video": low_video,
-                "high_position": "left" if high_on_left else "right",
+                "high_position": "first" if high_first else "second",
                 "is_practice": True,
             }
             

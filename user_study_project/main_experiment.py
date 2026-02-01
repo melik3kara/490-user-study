@@ -176,66 +176,28 @@ class PairwisePerceptionExperiment:
             lineColor=config.FIXATION_COLOR,
         )
         
-        # Calculate video positions
-        half_sep = config.VIDEO_SEPARATION / 2
-        half_width = config.VIDEO_WIDTH / 2
-        self.left_pos = (-(half_sep + half_width), 0)
-        self.right_pos = (half_sep + half_width, 0)
+        # Video position (centered)
+        self.video_pos = config.VIDEO_POSITION
         
-        # Video placeholders (will be replaced with actual MovieStim)
-        # TODO: Update with actual video loading when stimuli are available
-        # ======================================================================
-        # VIDEO STIMULUS PLACEHOLDER
-        # ======================================================================
-        # For now, create placeholder rectangles
-        # Replace with MovieStim3 when videos are ready:
-        #
-        # self.stimuli['video_left'] = visual.MovieStim3(
-        #     win=self.win,
-        #     filename='path/to/video.mp4',
-        #     size=(config.VIDEO_WIDTH, config.VIDEO_HEIGHT),
-        #     pos=self.left_pos,
-        #     flipVert=False,
-        #     flipHoriz=False,
-        #     loop=False,
-        # )
-        # ======================================================================
-        
-        self.stimuli['video_left_placeholder'] = visual.Rect(
+        # Video placeholder (single, centered)
+        self.stimuli['video_placeholder'] = visual.Rect(
             win=self.win,
             width=config.VIDEO_WIDTH,
             height=config.VIDEO_HEIGHT,
-            pos=self.left_pos,
+            pos=self.video_pos,
             fillColor='darkgray',
             lineColor='white',
             lineWidth=2,
         )
         
-        self.stimuli['video_right_placeholder'] = visual.Rect(
+        # Video label (shows "Video 1" or "Video 2" before each video)
+        self.stimuli['video_label'] = visual.TextStim(
             win=self.win,
-            width=config.VIDEO_WIDTH,
-            height=config.VIDEO_HEIGHT,
-            pos=self.right_pos,
-            fillColor='darkgray',
-            lineColor='white',
-            lineWidth=2,
-        )
-        
-        # Text labels for placeholders
-        self.stimuli['left_label'] = visual.TextStim(
-            win=self.win,
-            text='LEFT VIDEO',
-            pos=self.left_pos,
-            height=30,
+            text='',
+            pos=(0, 0),
+            height=48,
             color='white',
-        )
-        
-        self.stimuli['right_label'] = visual.TextStim(
-            win=self.win,
-            text='RIGHT VIDEO',
-            pos=self.right_pos,
-            height=30,
-            color='white',
+            bold=True,
         )
         
         # Question text
@@ -244,17 +206,17 @@ class PairwisePerceptionExperiment:
             text='',  # Set dynamically per trial
             pos=(0, 100),
             height=36,
-            color='white',
+            color='black',
             wrapWidth=800,
         )
         
-        # Response options
+        # Response options (First vs Second)
         self.stimuli['response_options'] = visual.TextStim(
             win=self.win,
-            text='← LEFT          RIGHT →',
+            text='Press 1 for FIRST video     |     Press 2 for SECOND video',
             pos=(0, -100),
             height=28,
-            color='white',
+            color='black',
         )
         
         # Confidence prompt
@@ -263,7 +225,7 @@ class PairwisePerceptionExperiment:
             text=config.CONFIDENCE_PROMPT,
             pos=(0, 50),
             height=28,
-            color='white',
+            color='black',
             wrapWidth=800,
         )
         
@@ -273,7 +235,7 @@ class PairwisePerceptionExperiment:
             text='1        2        3        4        5',
             pos=(0, -50),
             height=36,
-            color='white',
+            color='black',
         )
         
         # Instruction text
@@ -282,8 +244,28 @@ class PairwisePerceptionExperiment:
             text='',
             pos=(0, 0),
             height=24,
-            color='white',
+            color='black',
             wrapWidth=800,
+        )
+        
+        # Consent form elements
+        self.stimuli['consent_text'] = visual.TextStim(
+            win=self.win,
+            text=config.CONSENT_FORM_TEXT,
+            pos=(0, 50),
+            height=18,
+            color='black',
+            wrapWidth=900,
+            alignText='left',
+        )
+        
+        self.stimuli['consent_instruction'] = visual.TextStim(
+            win=self.win,
+            text='Press SPACE to agree and continue, or ESCAPE to quit.',
+            pos=(0, -350),
+            height=24,
+            color='darkgreen',
+            bold=True,
         )
     
     def setup_eyelink(self):
@@ -346,6 +328,28 @@ class PairwisePerceptionExperiment:
     # DISPLAY METHODS
     # ==========================================================================
     
+    def show_consent_form(self):
+        """
+        Display informed consent form and wait for agreement.
+        
+        Returns
+        -------
+        bool
+            True if user agreed (pressed SPACE), False if declined (pressed ESCAPE).
+        """
+        while True:
+            # Draw consent form elements
+            self.stimuli['consent_text'].draw()
+            self.stimuli['consent_instruction'].draw()
+            self.win.flip()
+            
+            # Check for keyboard input
+            keys = event.getKeys(keyList=['space', config.KEY_QUIT])
+            if 'space' in keys:
+                return True
+            if config.KEY_QUIT in keys:
+                return False
+    
     def show_instruction_screen(self, text, wait_key='space'):
         """
         Display an instruction screen and wait for key press.
@@ -403,192 +407,263 @@ class PairwisePerceptionExperiment:
             
         Returns
         -------
-        float
-            Timestamp when videos first appeared.
+        tuple
+            (video1_onset_time, video1_offset_time, video2_onset_time, video2_offset_time)
         """
-        onset_time = None
+        video1_onset = None
+        video1_offset = None
+        video2_onset = None
+        video2_offset = None
         
-        # Get video paths from trial
-        video_left_path = trial.get('video_left_path', '')
-        video_right_path = trial.get('video_right_path', '')
+        # Get video paths from trial (first and second instead of left/right)
+        video_first_path = trial.get('video_first_path', '')
+        video_second_path = trial.get('video_second_path', '')
         
         # Check if video files exist
-        if not os.path.exists(video_left_path) or not os.path.exists(video_right_path):
+        if not os.path.exists(video_first_path) or not os.path.exists(video_second_path):
             print(f"WARNING: Video files not found!")
-            print(f"  Left: {video_left_path}")
-            print(f"  Right: {video_right_path}")
-            return self._show_video_placeholders(trial, num_frames)
+            print(f"  First: {video_first_path}")
+            print(f"  Second: {video_second_path}")
+            return self._show_video_placeholders_sequential(trial, num_frames)
         
         if not CV2_AVAILABLE:
             print("WARNING: OpenCV not available, using placeholders")
-            return self._show_video_placeholders(trial, num_frames)
+            return self._show_video_placeholders_sequential(trial, num_frames)
         
         try:
-            print(f"Loading videos: {trial['video_left']} vs {trial['video_right']}")
+            print(f"Loading videos: {trial['video_first']} then {trial['video_second']}")
             
-            # Open video files with OpenCV
-            cap_left = cv2.VideoCapture(video_left_path)
-            cap_right = cv2.VideoCapture(video_right_path)
-            
-            if not cap_left.isOpened() or not cap_right.isOpened():
-                print("ERROR: Could not open video files")
-                cap_left.release()
-                cap_right.release()
-                return self._show_video_placeholders(trial, num_frames)
-            
-            # Get video properties
-            fps = cap_left.get(cv2.CAP_PROP_FPS) or 30
-            total_frames = int(cap_left.get(cv2.CAP_PROP_FRAME_COUNT))
-            
-            # Create ImageStim for displaying video frames
-            video_stim_left = visual.ImageStim(
+            # Create single centered ImageStim for video display
+            video_stim = visual.ImageStim(
                 win=self.win,
                 size=(config.VIDEO_WIDTH, config.VIDEO_HEIGHT),
-                pos=self.left_pos,
-            )
-            video_stim_right = visual.ImageStim(
-                win=self.win,
-                size=(config.VIDEO_WIDTH, config.VIDEO_HEIGHT),
-                pos=self.right_pos,
+                pos=self.video_pos,
             )
             
-            frame_count = 0
-            video_clock = core.Clock()
-            
-            while True:
-                # Read frames from both videos
-                ret_left, frame_left = cap_left.read()
-                ret_right, frame_right = cap_right.read()
-                
-                # Stop if either video ends
-                if not ret_left or not ret_right:
-                    break
-                
-                # Convert BGR to RGB and create PIL Image (most reliable for PsychoPy)
-                frame_left = cv2.cvtColor(frame_left, cv2.COLOR_BGR2RGB)
-                frame_right = cv2.cvtColor(frame_right, cv2.COLOR_BGR2RGB)
-                
-                # Use PIL Image - PsychoPy handles this correctly
-                pil_left = Image.fromarray(frame_left)
-                pil_right = Image.fromarray(frame_right)
-                
-                # Update stimuli with PIL images
-                video_stim_left.setImage(pil_left)
-                video_stim_right.setImage(pil_right)
-                
-                # Draw frames
-                video_stim_left.draw()
-                video_stim_right.draw()
-                
-                flip_time = self.win.flip()
-                frame_count += 1
+            # ===== SHOW VIDEO 1 =====
+            # Show "Video 1" label first
+            self.stimuli['video_label'].text = "Video 1"
+            label_frames = int(config.VIDEO_LABEL_DURATION * self.frame_rate)
+            for _ in range(label_frames):
+                self.stimuli['video_label'].draw()
+                self.win.flip()
                 self.frame_count += 1
-                
-                # Record onset on first frame
-                if frame_count == 1:
-                    onset_time = self.data_logger.log_event(
-                        'video_onset',
-                        trial_id=trial['trial_id'],
-                        details=f"{trial['video_left']}|{trial['video_right']}",
-                        frame_number=self.frame_count
-                    )
-                    
-                    # EyeLink markers
-                    self.eyelink.send_message(f"VIDEO_ONSET {trial['trial_id']}")
-                    self.eyelink.send_variable("video_left", trial['video_left'])
-                    self.eyelink.send_variable("video_right", trial['video_right'])
-                    self.eyelink.send_variable("trait", trial['trait'])
-                    self.eyelink.send_variable("high_position", trial['high_position'])
-                    
-                    # Define interest areas
-                    self.eyelink.define_video_interest_areas(
-                        self.left_pos,
-                        self.right_pos,
-                        config.VIDEO_WIDTH,
-                        config.VIDEO_HEIGHT
-                    )
-                
-                # Check for quit
                 if event.getKeys(keyList=[config.KEY_QUIT]):
-                    cap_left.release()
-                    cap_right.release()
                     self.quit_experiment()
-                
-                # Sync to video framerate
-                target_time = frame_count / fps
-                while video_clock.getTime() < target_time:
-                    pass
             
-            # Release video captures
-            cap_left.release()
-            cap_right.release()
-            
-            # Log video offset
-            self.data_logger.log_event(
-                'video_offset',
-                trial_id=trial['trial_id'],
-                frame_number=self.frame_count
+            # Play first video
+            video1_onset, video1_offset = self._play_single_video(
+                video_first_path, 
+                trial, 
+                video_stim, 
+                video_num=1
             )
-            self.eyelink.send_message(f"VIDEO_OFFSET {trial['trial_id']}")
             
-            print(f"Played {frame_count} frames")
-            return onset_time
+            # ===== INTER-VIDEO INTERVAL =====
+            inter_video_frames = int(config.INTER_VIDEO_INTERVAL * self.frame_rate)
+            for _ in range(inter_video_frames):
+                self.stimuli['fixation'].draw()
+                self.win.flip()
+                self.frame_count += 1
+                if event.getKeys(keyList=[config.KEY_QUIT]):
+                    self.quit_experiment()
+            
+            # ===== SHOW VIDEO 2 =====
+            # Show "Video 2" label first
+            self.stimuli['video_label'].text = "Video 2"
+            for _ in range(label_frames):
+                self.stimuli['video_label'].draw()
+                self.win.flip()
+                self.frame_count += 1
+                if event.getKeys(keyList=[config.KEY_QUIT]):
+                    self.quit_experiment()
+            
+            # Play second video
+            video2_onset, video2_offset = self._play_single_video(
+                video_second_path, 
+                trial, 
+                video_stim, 
+                video_num=2
+            )
+            
+            return (video1_onset, video1_offset, video2_onset, video2_offset)
             
         except Exception as e:
             print(f"Error loading videos: {e}")
             import traceback
             traceback.print_exc()
-            return self._show_video_placeholders(trial, num_frames)
+            return self._show_video_placeholders_sequential(trial, num_frames)
     
-    def _show_video_placeholders(self, trial, num_frames):
-        """Show placeholder rectangles when videos can't be loaded."""
+    def _play_single_video(self, video_path, trial, video_stim, video_num):
+        """
+        Play a single video at the center of the screen.
+        
+        Parameters
+        ----------
+        video_path : str
+            Path to the video file.
+        trial : dict
+            Trial dictionary.
+        video_stim : ImageStim
+            PsychoPy ImageStim for displaying frames.
+        video_num : int
+            1 for first video, 2 for second video.
+            
+        Returns
+        -------
+        tuple
+            (onset_time, offset_time)
+        """
         onset_time = None
+        offset_time = None
         
-        # Update placeholder labels with video filenames
-        self.stimuli['left_label'].text = trial['video_left']
-        self.stimuli['right_label'].text = trial['video_right']
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            print(f"ERROR: Could not open video {video_path}")
+            return None, None
         
-        for frame in range(num_frames):
-            # Draw video placeholders
-            self.stimuli['video_left_placeholder'].draw()
-            self.stimuli['video_right_placeholder'].draw()
-            self.stimuli['left_label'].draw()
-            self.stimuli['right_label'].draw()
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        frame_count = 0
+        video_clock = core.Clock()
+        
+        video_name = trial['video_first'] if video_num == 1 else trial['video_second']
+        
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            
+            # Convert BGR to RGB
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pil_frame = Image.fromarray(frame)
+            
+            video_stim.setImage(pil_frame)
+            video_stim.draw()
             
             flip_time = self.win.flip()
+            frame_count += 1
+            self.frame_count += 1
+            
+            # Record onset on first frame
+            if frame_count == 1:
+                onset_time = self.data_logger.log_event(
+                    f'video{video_num}_onset',
+                    trial_id=trial['trial_id'],
+                    details=video_name,
+                    frame_number=self.frame_count
+                )
+                
+                # EyeLink markers
+                self.eyelink.send_message(f"VIDEO{video_num}_ONSET {trial['trial_id']}")
+                self.eyelink.send_variable(f"video{video_num}", video_name)
+                if video_num == 1:
+                    self.eyelink.send_variable("trait", trial['trait'])
+                    self.eyelink.send_variable("high_position", trial['high_position'])
+                
+                # Define single centered interest area
+                self.eyelink.define_single_video_interest_area(
+                    self.video_pos,
+                    config.VIDEO_WIDTH,
+                    config.VIDEO_HEIGHT
+                )
+            
+            # Check for quit
+            if event.getKeys(keyList=[config.KEY_QUIT]):
+                cap.release()
+                self.quit_experiment()
+            
+            # Sync to video framerate
+            target_time = frame_count / fps
+            while video_clock.getTime() < target_time:
+                pass
+        
+        cap.release()
+        
+        # Log video offset
+        offset_time = self.data_logger.log_event(
+            f'video{video_num}_offset',
+            trial_id=trial['trial_id'],
+            frame_number=self.frame_count
+        )
+        self.eyelink.send_message(f"VIDEO{video_num}_OFFSET {trial['trial_id']}")
+        
+        print(f"Video {video_num}: Played {frame_count} frames")
+        return onset_time, offset_time
+    
+    def _show_video_placeholders_sequential(self, trial, num_frames):
+        """Show placeholder rectangles sequentially when videos can't be loaded."""
+        video1_onset = None
+        video1_offset = None
+        video2_onset = None
+        video2_offset = None
+        
+        half_frames = num_frames // 2
+        inter_frames = int(config.INTER_VIDEO_INTERVAL * self.frame_rate)
+        label_frames = int(config.VIDEO_LABEL_DURATION * self.frame_rate)
+        
+        # Video 1 label
+        self.stimuli['video_label'].text = "Video 1"
+        for _ in range(label_frames):
+            self.stimuli['video_label'].draw()
+            self.win.flip()
+            self.frame_count += 1
+        
+        # Video 1 placeholder
+        for frame in range(half_frames):
+            self.stimuli['video_placeholder'].draw()
+            self.stimuli['video_label'].text = trial['video_first']
+            self.stimuli['video_label'].draw()
+            self.win.flip()
             self.frame_count += 1
             
             if frame == 0:
-                onset_time = self.data_logger.log_event(
-                    'video_onset',
+                video1_onset = self.data_logger.log_event(
+                    'video1_onset',
                     trial_id=trial['trial_id'],
-                    details=f"{trial['video_left']}|{trial['video_right']}",
+                    details=trial['video_first'],
                     frame_number=self.frame_count
-                )
-                self.eyelink.send_message(f"VIDEO_ONSET {trial['trial_id']}")
-                self.eyelink.send_variable("video_left", trial['video_left'])
-                self.eyelink.send_variable("video_right", trial['video_right'])
-                self.eyelink.send_variable("trait", trial['trait'])
-                self.eyelink.send_variable("high_position", trial['high_position'])
-                self.eyelink.define_video_interest_areas(
-                    self.left_pos,
-                    self.right_pos,
-                    config.VIDEO_WIDTH,
-                    config.VIDEO_HEIGHT
                 )
             
             if event.getKeys(keyList=[config.KEY_QUIT]):
                 self.quit_experiment()
         
-        # Log video offset for placeholders
-        self.data_logger.log_event(
-            'video_offset',
-            trial_id=trial['trial_id'],
-            frame_number=self.frame_count
-        )
-        self.eyelink.send_message(f"VIDEO_OFFSET {trial['trial_id']}")
+        video1_offset = self.global_clock.getTime()
         
-        return onset_time
+        # Inter-video interval
+        for _ in range(inter_frames):
+            self.stimuli['fixation'].draw()
+            self.win.flip()
+            self.frame_count += 1
+        
+        # Video 2 label
+        self.stimuli['video_label'].text = "Video 2"
+        for _ in range(label_frames):
+            self.stimuli['video_label'].draw()
+            self.win.flip()
+            self.frame_count += 1
+        
+        # Video 2 placeholder
+        for frame in range(half_frames):
+            self.stimuli['video_placeholder'].draw()
+            self.stimuli['video_label'].text = trial['video_second']
+            self.stimuli['video_label'].draw()
+            self.win.flip()
+            self.frame_count += 1
+            
+            if frame == 0:
+                video2_onset = self.data_logger.log_event(
+                    'video2_onset',
+                    trial_id=trial['trial_id'],
+                    details=trial['video_second'],
+                    frame_number=self.frame_count
+                )
+            
+            if event.getKeys(keyList=[config.KEY_QUIT]):
+                self.quit_experiment()
+        
+        video2_offset = self.global_clock.getTime()
+        
+        return (video1_onset, video1_offset, video2_onset, video2_offset)
     
     def get_response(self, trial):
         """
@@ -624,20 +699,20 @@ class PairwisePerceptionExperiment:
             self.stimuli['response_options'].draw()
             self.win.flip()
             
-            # Check for responses
+            # Check for responses (1 for first, 2 for second)
             keys = event.getKeys(
-                keyList=[config.KEY_LEFT, config.KEY_RIGHT, config.KEY_QUIT],
+                keyList=[config.KEY_FIRST, config.KEY_SECOND, config.KEY_QUIT],
                 timeStamped=response_clock
             )
             
             for key, rt in keys:
                 if key == config.KEY_QUIT:
                     self.quit_experiment()
-                elif key == config.KEY_LEFT:
-                    response = 'left'
+                elif key == config.KEY_FIRST:
+                    response = 'first'
                     response_time = rt
-                elif key == config.KEY_RIGHT:
-                    response = 'right'
+                elif key == config.KEY_SECOND:
+                    response = 'second'
                     response_time = rt
             
             # Check for timeout
@@ -790,8 +865,8 @@ class PairwisePerceptionExperiment:
         self.eyelink.send_message("FIXATION_ONSET")
         self.show_fixation(self.fixation_frames)
         
-        # 2. Video presentation
-        video_onset_time = self.show_videos(trial, self.video_frames)
+        # 2. Video presentation (sequential: first then second)
+        video_timing = self.show_videos(trial, self.video_frames)
         
         # 3. Question and response
         response, response_time, response_timestamp = self.get_response(trial)
@@ -808,20 +883,29 @@ class PairwisePerceptionExperiment:
         # 5. Inter-trial interval
         self.show_inter_trial_interval(self.iti_frames)
         
+        # Unpack video timing (now returns tuple of 4 values)
+        if isinstance(video_timing, tuple) and len(video_timing) == 4:
+            video1_onset, video1_offset, video2_onset, video2_offset = video_timing
+        else:
+            video1_onset = video_timing
+            video1_offset = video2_onset = video2_offset = 0.0
+        
         # Compile trial results
         results = {
             'trial_id': trial_id,
             'trait': trial['trait'],
-            'video_left': trial['video_left'],
-            'video_right': trial['video_right'],
+            'video_first': trial['video_first'],
+            'video_second': trial['video_second'],
             'high_position': trial['high_position'],
             'response': response,
             'response_correct': response == trial['high_position'],
             'response_time': f"{response_time:.4f}",
             'confidence_rating': confidence,
             'trial_start_time': f"{trial_start_time:.4f}",
-            'video_onset_time': f"{video_onset_time:.4f}",
-            'video_offset_time': f"{self.data_logger.get_event_time('video_offset', trial_id):.4f}",
+            'video1_onset_time': f"{video1_onset:.4f}" if video1_onset else "0.0000",
+            'video1_offset_time': f"{video1_offset:.4f}" if video1_offset else "0.0000",
+            'video2_onset_time': f"{video2_onset:.4f}" if video2_onset else "0.0000",
+            'video2_offset_time': f"{video2_offset:.4f}" if video2_offset else "0.0000",
             'response_time_absolute': f"{response_timestamp:.4f}",
         }
         
@@ -861,6 +945,14 @@ class PairwisePerceptionExperiment:
             self.setup_data_logging()
             self.setup_trials()
             self.setup_eyelink()
+            
+            # ----- CONSENT FORM -----
+            print("Showing consent form...")
+            if not self.show_consent_form():
+                print("Consent not given. Experiment cancelled.")
+                self.cleanup()
+                return
+            print("Consent obtained.")
             
             # ----- INSTRUCTIONS -----
             self.show_instruction_screen(config.WELCOME_TEXT)

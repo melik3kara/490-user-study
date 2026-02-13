@@ -43,6 +43,11 @@ class TrialManager:
     # TRIAL GENERATION
     # ==========================================================================
     
+    def _get_abs_base_path(self):
+        """Get the absolute path to the video base directory."""
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(script_dir, self.config.VIDEO_BASE_PATH)
+
     def _load_video_files(self):
         """
         Load all available video files from the study_videos directory.
@@ -53,7 +58,8 @@ class TrialManager:
             Dictionary mapping traits to {high: [...], low: [...]} video filenames.
         """
         video_dict = {}
-        base_path = self.config.VIDEO_BASE_PATH
+        base_path = self._get_abs_base_path()
+        print(f"Looking for videos in: {base_path}")
         
         for trait in self.config.TRAITS:
             # Convert trait name to folder name (lowercase with underscores)
@@ -204,16 +210,17 @@ class TrialManager:
                         video_second = high_video
                         high_position = "second"
                     
-                    # Get full video paths
+                    # Get full video paths (absolute)
                     trait_folder = trait.lower().replace(" ", "_")
+                    abs_base = self._get_abs_base_path()
                     video_first_path = os.path.join(
-                        self.config.VIDEO_BASE_PATH, 
+                        abs_base, 
                         trait_folder,
                         "high" if high_first else "low",
                         video_first
                     )
                     video_second_path = os.path.join(
-                        self.config.VIDEO_BASE_PATH,
+                        abs_base,
                         trait_folder,
                         "low" if high_first else "high",
                         video_second
@@ -290,26 +297,27 @@ class TrialManager:
             low_video = low_videos[0]
             high_first = random.choice([True, False])
             
-            # Build full video paths
+            # Build full video paths (absolute)
             trait_folder = trait.lower().replace(" ", "_")
+            abs_base = self._get_abs_base_path()
             
             if high_first:
                 video_first = high_video
                 video_second = low_video
                 video_first_path = os.path.join(
-                    self.config.VIDEO_BASE_PATH, trait_folder, "high", high_video
+                    abs_base, trait_folder, "high", high_video
                 )
                 video_second_path = os.path.join(
-                    self.config.VIDEO_BASE_PATH, trait_folder, "low", low_video
+                    abs_base, trait_folder, "low", low_video
                 )
             else:
                 video_first = low_video
                 video_second = high_video
                 video_first_path = os.path.join(
-                    self.config.VIDEO_BASE_PATH, trait_folder, "low", low_video
+                    abs_base, trait_folder, "low", low_video
                 )
                 video_second_path = os.path.join(
-                    self.config.VIDEO_BASE_PATH, trait_folder, "high", high_video
+                    abs_base, trait_folder, "high", high_video
                 )
             
             practice_trial = {

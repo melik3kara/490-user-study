@@ -74,6 +74,11 @@ class PairwisePerceptionExperiment:
     
     def __init__(self):
         """Initialize the experiment."""
+        # Ensure working directory is the script's directory
+        # This is critical when launched from a different directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(script_dir)
+        
         self.win = None
         self.trial_manager = None
         self.data_logger = None
@@ -328,7 +333,11 @@ class PairwisePerceptionExperiment:
         # Print trial summary
         summary = self.trial_manager.get_trial_summary()
         print(f"Generated {summary['total_trials']} trials")
-        print(f"Trials per trait: {summary['trials_per_trait']}")
+        if summary['total_trials'] > 0:
+            print(f"Trials per trait: {summary.get('trials_per_trait', {})}")
+        else:
+            print("ERROR: No trials generated! Check that video files exist in:")
+            print(f"  {os.path.abspath(config.VIDEO_BASE_PATH)}")
     
     # ==========================================================================
     # DISPLAY METHODS
@@ -549,8 +558,16 @@ class PairwisePerceptionExperiment:
         # Open VFRAME DLF file for Data Viewer video playback overlay
         dlf_file = None
         trial_index = trial.get('trial_id', 0)
-        # Use unique DLF per video: trial_index * 10 + video_num
-        dlf_id = trial_index * 10 + video_num
+        # Use unique DLF per video: convert trial_index to int for practice trials
+        if isinstance(trial_index, str):
+            # Practice trials have IDs like "practice_1" -> use 9000 + number
+            try:
+                practice_num = int(trial_index.split('_')[-1])
+                dlf_id = 9000 + practice_num * 10 + video_num
+            except (ValueError, IndexError):
+                dlf_id = 9999 + video_num
+        else:
+            dlf_id = trial_index * 10 + video_num
         dlf_file = self.eyelink.open_vframe_file(dlf_id)
         
         # Draw video box on Host PC screen

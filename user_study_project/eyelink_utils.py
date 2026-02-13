@@ -1,394 +1,499 @@
 """
 EyeLink Integration Utilities for the Pairwise Personality Perception Experiment.
 
-This module provides wrapper functions for EyeLink eye tracker integration.
-The actual EyeLink connection code is implemented with placeholder functions
-that should be uncommented/modified when the eye tracker is available.
+This module provides a wrapper class for EyeLink 1000 Plus eye tracker integration,
+based on the SR Research PsychoPy demo patterns (video.py & fixationWindow_fastSamples.py).
 
-IMPORTANT: This module requires the pylink library from SR Research.
-Install it from: https://www.sr-research.com/support/
+Requires:
+    - pylink (SR Research Python library)
+    - EyeLinkCoreGraphicsPsychoPy.py (included in project)
 
 Usage:
     from eyelink_utils import EyeLinkManager
-    
-    el = EyeLinkManager(config)
+
+    el = EyeLinkManager(config, win)
     el.connect()
+    el.setup_calibration_graphics()
     el.calibrate()
-    
+
     # For each trial:
-    el.start_recording(trial_id)
-    el.send_message("TRIAL_START")
-    # ... present stimuli ...
-    el.send_message("TRIAL_END")
+    el.trial_start(trial_index)
+    el.drift_check()
+    el.start_recording()
+    el.send_message("VIDEO1_ONSET")
+    el.send_variable("trait", "Extraversion")
     el.stop_recording()
-    
-    el.close()
+    el.send_trial_result()
+
+    el.disconnect()
 """
 
 import os
-from datetime import datetime
+import sys
+import time
+import platform
 
 # ==============================================================================
-# EYELINK IMPORT
+# PYLINK IMPORT - Attempt to import, fallback to simulation
 # ==============================================================================
 
-# TODO: Uncomment this when pylink is installed
-# try:
-#     import pylink
-#     PYLINK_AVAILABLE = True
-# except ImportError:
-#     PYLINK_AVAILABLE = False
-#     print("WARNING: pylink not found. EyeLink functions will be simulated.")
-
-PYLINK_AVAILABLE = False  # Set to True when pylink is available
+try:
+    import pylink
+    PYLINK_AVAILABLE = True
+except ImportError:
+    PYLINK_AVAILABLE = False
+    print("WARNING: pylink not found. EyeLink functions will run in DUMMY mode.")
 
 
 class EyeLinkManager:
     """
-    Manager class for EyeLink eye tracker operations.
-    
-    Provides a clean interface for common EyeLink operations with
-    automatic fallback to simulation mode when hardware is unavailable.
+    Manager class for EyeLink 1000 Plus eye tracker operations.
+
+    Implements the SR Research recommended protocol for:
+    - Connection and EDF file management
+    - Tracker configuration (sample rate, event/sample flags)
+    - Calibration with PsychoPy graphics
+    - Per-trial recording with proper EDF messages
+    - Data Viewer integration (TRIALID, TRIAL_VAR, TRIAL_RESULT, VFRAME)
+    - Drift correction
+    - Clean shutdown and EDF file transfer
     """
-    
+
     def __init__(self, config, win=None):
         """
         Initialize the EyeLink manager.
-        
+
         Parameters
         ----------
         config : module
-            The configuration module containing EyeLink settings.
+            Configuration module with EyeLink settings.
         win : psychopy.visual.Window, optional
-            The PsychoPy window for calibration graphics.
+            PsychoPy window (needed for calibration graphics).
         """
         self.config = config
         self.win = win
-        self.eyelink = None
-        self.edf_filename = None
+        self.el_tracker = None
+        self.edf_file = None       # filename on Host PC (max 8 chars + .EDF)
+        self.edf_filename = None    # the 8-char base name
         self.is_connected = False
         self.is_recording = False
-        
-        # Check if EyeLink should be enabled
+        self.genv = None            # calibration graphics environment
+        self.eyelink_ver = 0
+        self.dummy_mode = False
+
+        # Screen info (set after window is provided)
+        self.scn_width = 0
+        self.scn_height = 0
+
+        # Session folders
+        self.session_folder = None
+        self.graphics_folder = None  # for VFRAME DLF files
+
+        # Determine mode
+        if not config.EYELINK_ENABLED:
+            self.dummy_mode = True
+        if not PYLINK_AVAILABLE:
+            self.dummy_mode = True
+
+        # Check enabled state
         self.enabled = config.EYELINK_ENABLED and PYLINK_AVAILABLE
-        
-        if not self.enabled:
-            print("EyeLink Manager: Running in SIMULATION mode")
-    
+
+        if self.dummy_mode:
+            print("[EYELINK] Running in DUMMY/SIMULATION mode")
+
     # ==========================================================================
-    # CONNECTION METHODS
+    # CONNECTION & SETUP
     # ==========================================================================
-    
-    def connect(self):
+
+    def connect(self, participant_id="TEST"):
         """
-        Establish connection to the EyeLink eye tracker.
-        
+        Connect to the EyeLink Host PC and open an EDF data file.
+
+        This follows the SR Research demo pattern:
+        Step 1: Connect to EyeLink
+        Step 2: Open EDF file on Host
+        Step 3: Configure tracker parameters
+
+        Parameters
+        ----------
+        participant_id : str
+            Participant ID used to construct the EDF filename (max 8 chars).
+
         Returns
         -------
         bool
-            True if connection successful, False otherwise.
+            True if connection successful.
         """
-        if not self.enabled:
+        if not PYLINK_AVAILABLE:
             print("[EYELINK SIMULATED] connect()")
             self.is_connected = True
             return True
-        
-        # TODO: Implement actual EyeLink connection
-        # ======================================================================
-        # EYELINK CONNECTION CODE
-        # ======================================================================
-        """
+
+        # ----- Step 1: Connect to EyeLink Host PC -----
         try:
-            # Connect to EyeLink
-            self.eyelink = pylink.EyeLink(self.config.EYELINK_IP)
-            
-            # Open EDF file on EyeLink host
-            timestamp = datetime.now().strftime("%H%M%S")
-            self.edf_filename = f"{self.config.EYELINK_FILE_PREFIX}{timestamp}.edf"
-            self.eyelink.openDataFile(self.edf_filename)
-            
-            # Configure tracker
-            self.eyelink.sendCommand(f"sample_rate = {self.config.EYELINK_SAMPLE_RATE}")
-            self.eyelink.sendCommand("file_event_filter = LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON,INPUT")
-            self.eyelink.sendCommand("link_event_filter = LEFT,RIGHT,FIXATION,SACCADE,BLINK,BUTTON,INPUT")
-            self.eyelink.sendCommand("file_sample_data = LEFT,RIGHT,GAZE,AREA,STATUS,INPUT")
-            self.eyelink.sendCommand("link_sample_data = LEFT,RIGHT,GAZE,AREA,STATUS,INPUT")
-            
+            if self.dummy_mode:
+                self.el_tracker = pylink.EyeLink(None)
+            else:
+                self.el_tracker = pylink.EyeLink(self.config.EYELINK_IP)
             self.is_connected = True
-            print(f"[EYELINK] Connected successfully. EDF: {self.edf_filename}")
-            return True
-            
-        except Exception as e:
-            print(f"[EYELINK ERROR] Failed to connect: {e}")
+        except RuntimeError as error:
+            print(f"[EYELINK ERROR] Could not connect: {error}")
             self.is_connected = False
             return False
-        """
-        # ======================================================================
-        
-        self.is_connected = True
-        return True
-    
-    def disconnect(self):
-        """
-        Disconnect from the EyeLink eye tracker and transfer data file.
-        """
-        if not self.enabled:
-            print("[EYELINK SIMULATED] disconnect()")
+
+        # ----- Step 2: Open EDF data file on Host PC -----
+        # EDF filename: max 8 alphanumeric chars
+        edf_base = participant_id[:8].upper()
+        # Sanitize: only letters, digits, underscore
+        allowed = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_')
+        edf_base = ''.join(c for c in edf_base if c in allowed)
+        if len(edf_base) == 0:
+            edf_base = "TEST"
+        self.edf_filename = edf_base
+        self.edf_file = edf_base + ".EDF"
+
+        try:
+            self.el_tracker.openDataFile(self.edf_file)
+        except RuntimeError as err:
+            print(f"[EYELINK ERROR] Could not open EDF file: {err}")
+            if self.el_tracker.isConnected():
+                self.el_tracker.close()
             self.is_connected = False
+            return False
+
+        # Add preamble text
+        preamble = 'RECORDED BY Pairwise Personality Perception Experiment'
+        self.el_tracker.sendCommand("add_file_preamble_text '%s'" % preamble)
+
+        # ----- Step 3: Configure tracker -----
+        self._configure_tracker()
+
+        # ----- Create session folders -----
+        self._setup_session_folders()
+
+        print(f"[EYELINK] Connected. EDF file: {self.edf_file}")
+        return True
+
+    def _configure_tracker(self):
+        """Configure the EyeLink tracker parameters (based on SR Research demos)."""
+
+        if self.el_tracker is None:
             return
-        
-        # TODO: Implement actual EyeLink disconnection
-        # ======================================================================
-        # EYELINK DISCONNECTION CODE
-        # ======================================================================
-        """
-        if self.eyelink is not None:
-            # Stop recording if still active
-            if self.is_recording:
-                self.stop_recording()
-            
-            # Close EDF file on tracker
-            self.eyelink.closeDataFile()
-            
-            # Transfer EDF file to local machine
-            local_edf_path = os.path.join(
-                self.config.EYELINK_DATA_FOLDER,
-                self.edf_filename
-            )
-            os.makedirs(self.config.EYELINK_DATA_FOLDER, exist_ok=True)
-            
+
+        # Put tracker in offline mode before changing parameters
+        self.el_tracker.setOfflineMode()
+
+        # Get software version
+        if not self.dummy_mode:
             try:
-                self.eyelink.receiveDataFile(self.edf_filename, local_edf_path)
-                print(f"[EYELINK] Data file saved: {local_edf_path}")
-            except Exception as e:
-                print(f"[EYELINK ERROR] Failed to transfer data file: {e}")
-            
-            # Close connection
-            self.eyelink.close()
-            self.eyelink = None
+                vstr = self.el_tracker.getTrackerVersionString()
+                self.eyelink_ver = int(vstr.split()[-1].split('.')[0])
+                print(f"[EYELINK] Tracker: {vstr}, version {self.eyelink_ver}")
+            except Exception:
+                self.eyelink_ver = 0
+
+        # File and Link data control
+        file_event_flags = 'LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON,INPUT'
+        link_event_flags = 'LEFT,RIGHT,FIXATION,SACCADE,BLINK,BUTTON,FIXUPDATE,INPUT'
+
+        # Include HTARGET flag for EyeLink 1000 Plus (version > 3)
+        if self.eyelink_ver > 3:
+            file_sample_flags = 'LEFT,RIGHT,GAZE,HREF,RAW,AREA,HTARGET,GAZERES,BUTTON,STATUS,INPUT'
+            link_sample_flags = 'LEFT,RIGHT,GAZE,GAZERES,AREA,HTARGET,STATUS,INPUT'
+        else:
+            file_sample_flags = 'LEFT,RIGHT,GAZE,HREF,RAW,AREA,GAZERES,BUTTON,STATUS,INPUT'
+            link_sample_flags = 'LEFT,RIGHT,GAZE,GAZERES,AREA,STATUS,INPUT'
+
+        self.el_tracker.sendCommand("file_event_filter = %s" % file_event_flags)
+        self.el_tracker.sendCommand("file_sample_data = %s" % file_sample_flags)
+        self.el_tracker.sendCommand("link_event_filter = %s" % link_event_flags)
+        self.el_tracker.sendCommand("link_sample_data = %s" % link_sample_flags)
+
+        # Sample rate (if tracker supports it)
+        if self.eyelink_ver > 2:
+            self.el_tracker.sendCommand(
+                "sample_rate %d" % self.config.EYELINK_SAMPLE_RATE
+            )
+
+        # Calibration type (HV9 = 9-point horizontal/vertical)
+        self.el_tracker.sendCommand(
+            "calibration_type = %s" % self.config.EYELINK_CALIBRATION_TYPE
+        )
+
+        # Gamepad button to accept calibration fixation
+        self.el_tracker.sendCommand("button_function 5 'accept_target_fixation'")
+
+    def _setup_session_folders(self):
+        """Create local folders for storing EDF files and VFRAME graphics data."""
+
+        results_folder = self.config.EYELINK_DATA_FOLDER
+        os.makedirs(results_folder, exist_ok=True)
+
+        # Session folder with timestamp
+        time_str = time.strftime("_%Y_%m_%d_%H_%M", time.localtime())
+        session_id = self.edf_filename + time_str
+
+        self.session_folder = os.path.join(results_folder, session_id)
+        os.makedirs(self.session_folder, exist_ok=True)
+
+        # Graphics folder for VFRAME DLF files (for Data Viewer video playback)
+        self.graphics_folder = os.path.join(self.session_folder, 'graphics')
+        os.makedirs(self.graphics_folder, exist_ok=True)
+
+    # ==========================================================================
+    # CALIBRATION
+    # ==========================================================================
+
+    def setup_calibration_graphics(self):
         """
-        # ======================================================================
-        
-        self.is_connected = False
-        print("[EYELINK SIMULATED] Disconnected")
-    
-    # ==========================================================================
-    # CALIBRATION METHODS
-    # ==========================================================================
-    
+        Set up PsychoPy-based calibration graphics for the EyeLink.
+
+        Must be called after the PsychoPy window is created and before calibrate().
+        """
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
+            return
+
+        if self.win is None:
+            print("[EYELINK ERROR] Window not set. Cannot set up calibration graphics.")
+            return
+
+        from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
+
+        # Get screen resolution
+        self.scn_width, self.scn_height = self.win.size
+
+        # Mac retina display fix
+        if 'Darwin' in platform.system():
+            if getattr(self.config, 'USE_RETINA', False):
+                self.scn_width = int(self.scn_width / 2.0)
+                self.scn_height = int(self.scn_height / 2.0)
+
+        # Send screen pixel coordinates to the tracker
+        el_coords = "screen_pixel_coords = 0 0 %d %d" % (
+            self.scn_width - 1, self.scn_height - 1
+        )
+        self.el_tracker.sendCommand(el_coords)
+
+        # Write DISPLAY_COORDS message for Data Viewer
+        dv_coords = "DISPLAY_COORDS  0 0 %d %d" % (
+            self.scn_width - 1, self.scn_height - 1
+        )
+        self.el_tracker.sendMessage(dv_coords)
+
+        # Configure calibration graphics environment
+        self.genv = EyeLinkCoreGraphicsPsychoPy(self.el_tracker, self.win)
+        print(f"[EYELINK] Calibration graphics: {self.genv}")
+
+        # Set calibration colors
+        foreground_color = (-1, -1, -1)  # black target
+        background_color = self.win.color
+        self.genv.setCalibrationColors(foreground_color, background_color)
+
+        # Use circle target for calibration
+        self.genv.setTargetType('circle')
+        self.genv.setTargetSize(24)
+
+        # Calibration sounds (default beeps)
+        self.genv.setCalibrationSounds('', '', '')
+
+        # Mac retina fix
+        if getattr(self.config, 'USE_RETINA', False):
+            self.genv.fixMacRetinaDisplay()
+
+        # Register the graphics environment with pylink
+        pylink.openGraphicsEx(self.genv)
+
     def calibrate(self):
         """
-        Run the EyeLink calibration procedure.
-        
-        This should be called before starting the experiment and optionally
-        between blocks if drift is suspected.
-        
+        Run the EyeLink calibration/validation procedure.
+
         Returns
         -------
         bool
-            True if calibration successful, False otherwise.
+            True if calibration completed.
         """
-        if not self.enabled:
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
             print("[EYELINK SIMULATED] calibrate()")
             return True
-        
-        # TODO: Implement actual calibration
-        # ======================================================================
-        # EYELINK CALIBRATION CODE
-        # ======================================================================
-        """
-        if self.eyelink is None or not self.is_connected:
-            print("[EYELINK ERROR] Not connected. Cannot calibrate.")
-            return False
-        
+
+        if self.dummy_mode:
+            print("[EYELINK] Dummy mode - skipping calibration")
+            return True
+
         try:
-            # Set calibration type
-            self.eyelink.sendCommand(f"calibration_type = {self.config.EYELINK_CALIBRATION_TYPE}")
-            
-            # Create custom calibration graphics if using PsychoPy
-            # This requires pylink.EyeLinkCustomDisplay or similar
-            
-            # For basic calibration:
-            self.eyelink.doTrackerSetup()
-            
+            self.el_tracker.doTrackerSetup()
             print("[EYELINK] Calibration complete")
             return True
-            
-        except Exception as e:
-            print(f"[EYELINK ERROR] Calibration failed: {e}")
+        except RuntimeError as err:
+            print(f"[EYELINK ERROR] Calibration failed: {err}")
+            self.el_tracker.exitCalibration()
             return False
-        """
-        # ======================================================================
-        
-        return True
-    
+
+    # ==========================================================================
+    # DRIFT CORRECTION
+    # ==========================================================================
+
     def drift_check(self, x=None, y=None):
         """
-        Perform a drift check at the specified location.
-        
+        Perform drift correction at the specified position.
+
         Parameters
         ----------
         x : int, optional
-            X coordinate for drift check (default: screen center).
+            X coordinate (default: screen center).
         y : int, optional
-            Y coordinate for drift check (default: screen center).
-            
+            Y coordinate (default: screen center).
+
         Returns
         -------
         bool
             True if drift check passed, False if recalibration needed.
         """
-        if not self.enabled:
-            print(f"[EYELINK SIMULATED] drift_check(x={x}, y={y})")
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
+            print("[EYELINK SIMULATED] drift_check()")
             return True
-        
-        # TODO: Implement actual drift check
-        # ======================================================================
-        # EYELINK DRIFT CHECK CODE
-        # ======================================================================
-        """
+
+        if self.dummy_mode:
+            return True
+
         if x is None:
-            x = self.config.SCREEN_WIDTH // 2
+            x = int(self.scn_width / 2.0)
         if y is None:
-            y = self.config.SCREEN_HEIGHT // 2
-        
-        try:
-            result = self.eyelink.doDriftCorrect(x, y, 1, 1)
-            if result == pylink.ABORT_EXPT:
-                print("[EYELINK] Drift check aborted - recalibration needed")
+            y = int(self.scn_height / 2.0)
+
+        # Drift check loop (press ESCAPE to recalibrate)
+        while True:
+            if not self.el_tracker.isConnected() or self.el_tracker.breakPressed():
                 return False
-            return True
-        except Exception as e:
-            print(f"[EYELINK ERROR] Drift check failed: {e}")
-            return False
+
+            try:
+                error = self.el_tracker.doDriftCorrect(x, y, 1, 1)
+                if error is not pylink.ESC_KEY:
+                    return True
+            except Exception:
+                pass
+
+    # ==========================================================================
+    # RECORDING CONTROL
+    # ==========================================================================
+
+    def trial_start(self, trial_index, status_msg=None):
         """
-        # ======================================================================
-        
-        return True
-    
-    # ==========================================================================
-    # RECORDING METHODS
-    # ==========================================================================
-    
+        Mark the start of a trial. Sends TRIALID message and status to Host.
+
+        Parameters
+        ----------
+        trial_index : int
+            Trial number.
+        status_msg : str, optional
+            Message to show on Host PC status bar.
+        """
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
+            print(f"[EYELINK SIMULATED] trial_start({trial_index})")
+            return
+
+        # Put tracker in offline mode
+        self.el_tracker.setOfflineMode()
+
+        # Send TRIALID message (required by Data Viewer)
+        self.el_tracker.sendMessage('TRIALID %d' % trial_index)
+
+        # Show status on Host PC
+        if status_msg is None:
+            status_msg = 'TRIAL number %d' % trial_index
+        self.el_tracker.sendCommand("record_status_message '%s'" % status_msg)
+
+        # Clear Host PC screen
+        self.el_tracker.sendCommand('clear_screen 0')
+
     def start_recording(self, trial_id=None):
         """
-        Start eye tracking recording for a trial.
-        
+        Start eye tracking recording.
+
         Parameters
         ----------
         trial_id : int or str, optional
-            Trial identifier for logging purposes.
+            Trial identifier for logging.
         """
-        if not self.enabled:
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
             print(f"[EYELINK SIMULATED] start_recording(trial_id={trial_id})")
             self.is_recording = True
             return
-        
-        # TODO: Implement actual recording start
-        # ======================================================================
-        # EYELINK START RECORDING CODE
-        # ======================================================================
-        """
-        if self.eyelink is None or not self.is_connected:
-            print("[EYELINK ERROR] Not connected. Cannot start recording.")
-            return
-        
+
+        # Put tracker in idle/offline mode before recording
+        self.el_tracker.setOfflineMode()
+
+        # Start recording (sample_to_file, events_to_file, sample_over_link, event_over_link)
         try:
-            # Start recording
-            # Parameters: file_samples, file_events, link_samples, link_events
-            error = self.eyelink.startRecording(1, 1, 1, 1)
-            
-            if error:
-                print(f"[EYELINK ERROR] Recording start failed with error: {error}")
-                return
-            
-            # Wait for recording to start
-            pylink.msecDelay(100)
-            
-            # Check if recording started
-            if self.eyelink.isRecording() == 0:
-                self.is_recording = True
-                if trial_id is not None:
-                    self.send_message(f"TRIAL_ID {trial_id}")
-                print(f"[EYELINK] Recording started (trial: {trial_id})")
-            else:
-                print("[EYELINK ERROR] Recording did not start properly")
-                
-        except Exception as e:
-            print(f"[EYELINK ERROR] Failed to start recording: {e}")
-        """
-        # ======================================================================
-        
+            self.el_tracker.startRecording(1, 1, 1, 1)
+        except RuntimeError as error:
+            print(f"[EYELINK ERROR] Could not start recording: {error}")
+            return
+
+        # Allow tracker to cache some samples
+        pylink.pumpDelay(100)
+
         self.is_recording = True
-    
+        if trial_id is not None:
+            self.send_message(f"TRIAL_START {trial_id}")
+
     def stop_recording(self):
-        """
-        Stop eye tracking recording.
-        """
-        if not self.enabled:
+        """Stop eye tracking recording."""
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
             print("[EYELINK SIMULATED] stop_recording()")
             self.is_recording = False
             return
-        
-        # TODO: Implement actual recording stop
-        # ======================================================================
-        # EYELINK STOP RECORDING CODE
-        # ======================================================================
-        """
-        if self.eyelink is None:
-            return
-        
-        try:
-            # Stop recording
-            self.eyelink.stopRecording()
-            self.is_recording = False
-            print("[EYELINK] Recording stopped")
-        except Exception as e:
-            print(f"[EYELINK ERROR] Failed to stop recording: {e}")
-        """
-        # ======================================================================
-        
+
+        # Add 100 ms to catch final events
+        pylink.pumpDelay(100)
+        self.el_tracker.stopRecording()
         self.is_recording = False
-    
+
+    def abort_trial(self):
+        """Abort the current trial recording (on error or skip)."""
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
+            self.is_recording = False
+            return
+
+        # Stop recording if active
+        if self.el_tracker.isRecording():
+            pylink.pumpDelay(100)
+            self.el_tracker.stopRecording()
+
+        # Clear Data Viewer screen
+        bgcolor_RGB = (128, 128, 128)
+        self.el_tracker.sendMessage('!V CLEAR %d %d %d' % bgcolor_RGB)
+
+        # Mark trial as error
+        self.el_tracker.sendMessage('TRIAL_RESULT %d' % pylink.TRIAL_ERROR)
+        self.is_recording = False
+
     # ==========================================================================
-    # MESSAGE METHODS
+    # MESSAGES & DATA VIEWER INTEGRATION
     # ==========================================================================
-    
+
     def send_message(self, message):
         """
-        Send a timestamped message to the EyeLink data file.
-        
-        Use this to mark important events in the eye tracking data,
-        such as stimulus onset/offset, responses, etc.
-        
+        Send a timestamped message to the EDF data file.
+
         Parameters
         ----------
         message : str
-            The message to send (max 150 characters).
+            Message text (max 150 chars).
         """
-        if not self.enabled:
-            print(f"[EYELINK SIMULATED] send_message('{message}')")
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
+            print(f"[EYELINK SIMULATED] msg: {message}")
             return
-        
-        # TODO: Implement actual message sending
-        # ======================================================================
-        # EYELINK MESSAGE CODE
-        # ======================================================================
-        """
-        if self.eyelink is not None and self.is_connected:
-            try:
-                self.eyelink.sendMessage(message[:150])
-            except Exception as e:
-                print(f"[EYELINK ERROR] Failed to send message: {e}")
-        """
-        # ======================================================================
-    
+
+        try:
+            self.el_tracker.sendMessage(message[:150])
+        except Exception as e:
+            print(f"[EYELINK ERROR] Failed to send message: {e}")
+
     def send_variable(self, name, value):
         """
-        Send a trial variable to the EyeLink data file.
-        
-        These variables can be used in EyeLink Data Viewer for analysis.
-        
+        Send a trial variable for Data Viewer analysis.
+
         Parameters
         ----------
         name : str
@@ -396,110 +501,148 @@ class EyeLinkManager:
         value : str or number
             Variable value.
         """
-        message = f"!V TRIAL_VAR {name} {value}"
-        self.send_message(message)
-    
+        self.send_message('!V TRIAL_VAR %s %s' % (name, value))
+
+    def send_trial_result(self, result_code=None):
+        """
+        Send TRIAL_RESULT message to mark end of trial.
+
+        Parameters
+        ----------
+        result_code : int, optional
+            Result code (default: pylink.TRIAL_OK = 0).
+        """
+        if result_code is None:
+            result_code = 0
+            if PYLINK_AVAILABLE:
+                result_code = pylink.TRIAL_OK
+
+        self.send_message('TRIAL_RESULT %d' % result_code)
+
+    def clear_data_viewer_screen(self, r=128, g=128, b=128):
+        """Send message to clear Data Viewer screen."""
+        self.send_message('!V CLEAR %d %d %d' % (r, g, b))
+
     # ==========================================================================
-    # INTEREST AREA METHODS
+    # VFRAME MESSAGES (for video playback in Data Viewer)
     # ==========================================================================
-    
+
+    def open_vframe_file(self, trial_index):
+        """
+        Open a DLF (Draw List File) for VFRAME messages.
+
+        This file tells Data Viewer how to overlay gaze on video frames.
+
+        Parameters
+        ----------
+        trial_index : int
+            Trial number.
+
+        Returns
+        -------
+        file object or None
+            The opened DLF file, or None in simulation mode.
+        """
+        if self.graphics_folder is None:
+            return None
+
+        dlf_name = 'VC_%d.dlf' % trial_index
+        dlf_path = os.path.join(self.graphics_folder, dlf_name)
+        try:
+            return open(dlf_path, 'w')
+        except Exception as e:
+            print(f"[EYELINK ERROR] Could not open DLF file: {e}")
+            return None
+
+    def write_vframe(self, dlf_file, frame_num, frame_timestamp_sec,
+                     vid_x, vid_y, video_relative_path, trial_index):
+        """
+        Write a VFRAME message to the DLF file and send draw list message.
+
+        Parameters
+        ----------
+        dlf_file : file object
+            The DLF file opened by open_vframe_file().
+        frame_num : int
+            Frame number (1-based).
+        frame_timestamp_sec : float
+            Current frame timestamp in seconds.
+        vid_x : int
+            Top-left X position of video on screen.
+        vid_y : int
+            Top-left Y position of video on screen.
+        video_relative_path : str
+            Relative path to the video file (from DLF file location).
+        trial_index : int
+            Trial number.
+        """
+        if dlf_file is None:
+            return
+
+        # Send frame onset message
+        self.send_message('Frame %d' % frame_num)
+
+        # On the first frame, send DRAW_LIST command
+        if frame_num == 1:
+            dlf_name = os.path.basename(dlf_file.name)
+            self.send_message('!V DRAW_LIST graphics/%s' % dlf_name)
+
+        # Write VFRAME message to DLF file
+        time_offset = -1 * int(frame_timestamp_sec * 1000)
+        vframe_msg = '%d VFRAME %d %d %d %s' % (
+            time_offset, frame_num, vid_x, vid_y, video_relative_path
+        )
+        dlf_file.write(vframe_msg + '\n')
+
+    # ==========================================================================
+    # INTEREST AREAS
+    # ==========================================================================
+
     def define_interest_area(self, ia_id, left, top, right, bottom, label):
         """
-        Define a rectangular interest area for the current trial.
-        
+        Define a rectangular interest area for Data Viewer.
+
         Parameters
         ----------
         ia_id : int
-            Interest area ID (unique within trial).
-        left : int
-            Left edge of the rectangle (pixels).
-        top : int
-            Top edge of the rectangle (pixels).
-        right : int
-            Right edge of the rectangle (pixels).
-        bottom : int
-            Bottom edge of the rectangle (pixels).
+            Interest area ID.
+        left, top, right, bottom : int
+            Pixel coordinates (EyeLink coordinate system: top-left = 0,0).
         label : str
-            Label for the interest area.
+            Interest area label.
         """
-        message = f"!V IAREA RECTANGLE {ia_id} {left} {top} {right} {bottom} {label}"
-        self.send_message(message)
-    
-    def define_video_interest_areas(self, left_video_pos, right_video_pos, 
-                                     video_width, video_height):
-        """
-        Define interest areas for the left and right video regions.
-        
-        Parameters
-        ----------
-        left_video_pos : tuple
-            (x, y) center position of left video in pixels.
-        right_video_pos : tuple
-            (x, y) center position of right video in pixels.
-        video_width : int
-            Width of each video in pixels.
-        video_height : int
-            Height of each video in pixels.
-        """
-        padding = self.config.INTEREST_AREA_PADDING
-        half_w = video_width // 2 + padding
-        half_h = video_height // 2 + padding
-        
-        # Convert from PsychoPy coordinates (center = 0,0) to EyeLink (top-left = 0,0)
-        screen_cx = self.config.SCREEN_WIDTH // 2
-        screen_cy = self.config.SCREEN_HEIGHT // 2
-        
-        # Left video IA
-        lx, ly = left_video_pos
-        lx_screen = screen_cx + lx
-        ly_screen = screen_cy - ly  # Flip Y axis
-        self.define_interest_area(
-            1,
-            int(lx_screen - half_w),
-            int(ly_screen - half_h),
-            int(lx_screen + half_w),
-            int(ly_screen + half_h),
-            "LEFT_VIDEO"
+        self.send_message(
+            '!V IAREA RECTANGLE %d %d %d %d %d %s' % (
+                ia_id, left, top, right, bottom, label
+            )
         )
-        
-        # Right video IA
-        rx, ry = right_video_pos
-        rx_screen = screen_cx + rx
-        ry_screen = screen_cy - ry
-        self.define_interest_area(
-            2,
-            int(rx_screen - half_w),
-            int(ry_screen - half_h),
-            int(rx_screen + half_w),
-            int(ry_screen + half_h),
-            "RIGHT_VIDEO"
-        )
-    
+
     def define_single_video_interest_area(self, video_pos, video_width, video_height):
         """
         Define interest area for a single centered video.
-        
+
+        Converts PsychoPy coordinates (center=0,0) to EyeLink (top-left=0,0).
+
         Parameters
         ----------
         video_pos : tuple
-            (x, y) center position of video in pixels.
+            (x, y) center position in PsychoPy coordinates.
         video_width : int
-            Width of video in pixels.
+            Video width in pixels.
         video_height : int
-            Height of video in pixels.
+            Video height in pixels.
         """
-        padding = self.config.INTEREST_AREA_PADDING
+        padding = getattr(self.config, 'INTEREST_AREA_PADDING', 20)
         half_w = video_width // 2 + padding
         half_h = video_height // 2 + padding
-        
-        # Convert from PsychoPy coordinates (center = 0,0) to EyeLink (top-left = 0,0)
-        screen_cx = self.config.SCREEN_WIDTH // 2
-        screen_cy = self.config.SCREEN_HEIGHT // 2
-        
-        # Video IA (centered)
+
+        screen_cx = self.scn_width // 2 if self.scn_width > 0 else self.config.SCREEN_WIDTH // 2
+        screen_cy = self.scn_height // 2 if self.scn_height > 0 else self.config.SCREEN_HEIGHT // 2
+
         vx, vy = video_pos
         vx_screen = screen_cx + vx
         vy_screen = screen_cy - vy  # Flip Y axis
+
         self.define_interest_area(
             1,
             int(vx_screen - half_w),
@@ -508,32 +651,75 @@ class EyeLinkManager:
             int(vy_screen + half_h),
             "VIDEO"
         )
-    
+
     # ==========================================================================
-    # UTILITY METHODS
+    # HOST PC DRAWING
     # ==========================================================================
-    
+
+    def draw_host_video_box(self, vid_width, vid_height):
+        """
+        Draw a box on the Host PC screen showing where the video is displayed.
+
+        Parameters
+        ----------
+        vid_width : int
+            Video width in pixels.
+        vid_height : int
+            Video height in pixels.
+        """
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
+            return
+
+        cx = int(self.scn_width / 2.0)
+        cy = int(self.scn_height / 2.0)
+        left = cx - vid_width // 2
+        top = cy - vid_height // 2
+        right = cx + vid_width // 2
+        bottom = cy + vid_height // 2
+
+        self.el_tracker.sendCommand(
+            'draw_box %d %d %d %d 15' % (left, top, right, bottom)
+        )
+
+    # ==========================================================================
+    # GAZE DATA ACCESS
+    # ==========================================================================
+
+    def get_eye_used(self):
+        """
+        Determine which eye is being tracked.
+
+        Returns
+        -------
+        int
+            0 = left, 1 = right, -1 = not available.
+        """
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
+            return 0  # simulate left eye
+
+        eye_used = self.el_tracker.eyeAvailable()
+        if eye_used == 1:
+            self.send_message("EYE_USED 1 RIGHT")
+            return 1
+        elif eye_used == 0 or eye_used == 2:
+            self.send_message("EYE_USED 0 LEFT")
+            return 0
+        else:
+            return -1
+
     def get_newest_sample(self):
         """
-        Get the most recent eye sample from the EyeLink.
-        
+        Get the most recent eye sample.
+
         Returns
         -------
         dict or None
-            Dictionary with gaze data, or None if unavailable.
+            {'gaze_x': float, 'gaze_y': float, 'pupil_size': float}
         """
-        if not self.enabled:
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
             return {"gaze_x": 0, "gaze_y": 0, "pupil_size": 0}
-        
-        # TODO: Implement actual sample retrieval
-        # ======================================================================
-        # EYELINK SAMPLE RETRIEVAL CODE
-        # ======================================================================
-        """
-        if self.eyelink is None or not self.is_recording:
-            return None
-        
-        sample = self.eyelink.getNewestSample()
+
+        sample = self.el_tracker.getNewestSample()
         if sample is not None:
             if sample.isRightSample():
                 gaze = sample.getRightEye().getGaze()
@@ -543,42 +729,79 @@ class EyeLinkManager:
                 pupil = sample.getLeftEye().getPupilSize()
             else:
                 return None
-            
+
             return {
                 "gaze_x": gaze[0],
                 "gaze_y": gaze[1],
                 "pupil_size": pupil
             }
         return None
+
+    def is_tracker_recording(self):
+        """Check if the tracker is currently recording properly."""
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
+            return True  # simulate OK
+
+        error = self.el_tracker.isRecording()
+        return error == pylink.TRIAL_OK
+
+    # ==========================================================================
+    # SHUTDOWN
+    # ==========================================================================
+
+    def disconnect(self):
         """
-        # ======================================================================
-        
-        return {"gaze_x": 0, "gaze_y": 0, "pupil_size": 0}
-    
-    def is_fixating(self, x, y, tolerance=50):
+        Disconnect from EyeLink, close EDF file, and transfer data.
+
+        Follows the SR Research shutdown protocol:
+        1. Stop recording if active
+        2. Set offline mode
+        3. Clear Host screen
+        4. Close EDF file
+        5. Transfer EDF to local machine
+        6. Close connection
         """
-        Check if the participant is currently fixating within a region.
-        
-        Parameters
-        ----------
-        x : int
-            Center X coordinate of the region.
-        y : int
-            Center Y coordinate of the region.
-        tolerance : int
-            Radius of acceptable fixation area in pixels.
-            
-        Returns
-        -------
-        bool
-            True if fixating within the region, False otherwise.
-        """
-        sample = self.get_newest_sample()
-        if sample is None:
-            return False
-        
-        gaze_x = sample["gaze_x"]
-        gaze_y = sample["gaze_y"]
-        
-        distance = ((gaze_x - x) ** 2 + (gaze_y - y) ** 2) ** 0.5
-        return distance <= tolerance
+        if not PYLINK_AVAILABLE or self.el_tracker is None:
+            print("[EYELINK SIMULATED] disconnect()")
+            self.is_connected = False
+            return
+
+        if not self.el_tracker.isConnected():
+            self.is_connected = False
+            return
+
+        # Stop recording if still active
+        if self.is_recording:
+            self.abort_trial()
+
+        # Put tracker in offline mode
+        self.el_tracker.setOfflineMode()
+
+        # Clear Host screen
+        self.el_tracker.sendCommand('clear_screen 0')
+        pylink.pumpDelay(500)
+
+        # Close EDF file on Host
+        self.el_tracker.closeDataFile()
+
+        # Transfer EDF file to local machine
+        if self.session_folder and self.edf_file:
+            local_edf = os.path.join(
+                self.session_folder,
+                self.edf_filename + '.EDF'
+            )
+            print(f"[EYELINK] Transferring EDF data file to {local_edf}...")
+            try:
+                self.el_tracker.receiveDataFile(self.edf_file, local_edf)
+                print(f"[EYELINK] EDF file saved: {local_edf}")
+            except RuntimeError as error:
+                print(f"[EYELINK ERROR] EDF transfer failed: {error}")
+
+        # Close the connection
+        self.el_tracker.close()
+        self.el_tracker = None
+        self.is_connected = False
+        print("[EYELINK] Disconnected successfully")
+
+    # Alias for backward compatibility
+    close = disconnect

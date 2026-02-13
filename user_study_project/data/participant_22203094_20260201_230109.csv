@@ -1,2 +1,0 @@
-participant_id,session,trial_id,trait,video_first,video_second,high_position,response,response_correct,response_time,confidence_rating,trial_start_time,video1_onset_time,video1_offset_time,video2_onset_time,video2_offset_time,response_time_absolute
-22203094,1,1,Agreeableness,KGRUaRe3r7I.001.mp4,PHv6CzBIC5E.001.mp4,first,first,True,5.0243,1,59.1197,60.1676,75.4634,76.4815,91.7678,96.7979

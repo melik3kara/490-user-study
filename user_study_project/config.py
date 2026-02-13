@@ -131,12 +131,21 @@ LOG_COLUMNS = [
 # Set to True when EyeLink is connected and ready
 EYELINK_ENABLED = False
 
+# Set to True to run EyeLink in Dummy Mode (no hardware needed)
+# Useful for testing the experiment flow without the eye tracker
+EYELINK_DUMMY_MODE = False
+
+# Set to True if using Mac retina display as primary display
+# If using an external monitor, set True if "Optimize for Built-in Retina Display"
+# is selected in macOS Displays preferences
+USE_RETINA = False
+
 # EyeLink configuration
-EYELINK_IP = "100.1.1.1"  # Default EyeLink IP address
+EYELINK_IP = "100.1.1.1"  # Default EyeLink Host PC IP address
 EYELINK_SAMPLE_RATE = 1000  # Hz (250, 500, 1000, or 2000)
 
 # Calibration settings
-EYELINK_CALIBRATION_TYPE = "HV9"  # 9-point calibration
+EYELINK_CALIBRATION_TYPE = "HV9"  # 9-point calibration (HV3, HV5, HV9, HV13)
 EYELINK_CALIBRATION_TARGETS = "default"
 
 # EyeLink data file settings

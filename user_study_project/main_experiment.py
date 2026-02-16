@@ -631,8 +631,15 @@ class PairwisePerceptionExperiment:
             
             # Write VFRAME message for Data Viewer video overlay
             if current_frame_timestamp != previous_frame_timestamp:
-                # Relative path to video from DLF file location
-                video_relative_path = os.path.join('../../..', video_path)
+                # Compute relative path from DLF file location (graphics/) to video
+                # This matches SR Research demo pattern: e.g. '../../../stimuli/videos/...'
+                if self.eyelink.graphics_folder:
+                    video_relative_path = os.path.relpath(
+                        os.path.abspath(video_path),
+                        self.eyelink.graphics_folder
+                    )
+                else:
+                    video_relative_path = video_path
                 self.eyelink.write_vframe(
                     dlf_file, frame_count, current_frame_timestamp,
                     vid_top_left_x, vid_top_left_y,
@@ -1085,12 +1092,6 @@ class PairwisePerceptionExperiment:
         if config.EYELINK_ENABLED and not is_practice:
             self.eyelink.drift_check()
         
-        # ==================================================================
-        # EYELINK: Start recording
-        # ==================================================================
-        self.eyelink.start_recording(trial_id)
-        self.eyelink.send_message(f"TRIAL_START {trial_id}")
-        
         # Log trial start
         trial_start_time = self.data_logger.log_event(
             'trial_start',
@@ -1099,34 +1100,34 @@ class PairwisePerceptionExperiment:
         )
         
         # 1. Show question first (so participant knows what to look for)
-        self.eyelink.send_message("QUESTION_PREVIEW_ONSET")
+        #    NO recording here — we only record during video playback
         self.show_question_preview(trial)
-        self.eyelink.send_message("QUESTION_PREVIEW_OFFSET")
         
-        # 2. Fixation cross
+        # 2. Fixation cross (no recording)
         self.data_logger.log_event('fixation_onset', trial_id=trial_id)
-        self.eyelink.send_message("FIXATION_ONSET")
         self.show_fixation(self.fixation_frames)
-        self.eyelink.send_message("FIXATION_OFFSET")
+        
+        # ==================================================================
+        # EYELINK: Start recording — ONLY for video presentation
+        # ==================================================================
+        self.eyelink.start_recording(trial_id)
+        self.eyelink.send_message(f"TRIAL_START {trial_id}")
         
         # 3. Video presentation (sequential: first then second)
         video_timing = self.show_videos(trial, self.video_frames)
         
-        # 4. Selection screen (1 or 2)
-        self.eyelink.send_message("SELECTION_SCREEN_ONSET")
-        response, response_time, response_timestamp = self.get_selection(trial)
-        self.eyelink.send_message("SELECTION_SCREEN_OFFSET")
-        
-        # 5. Confidence rating
-        self.eyelink.send_message("CONFIDENCE_SCREEN_ONSET")
-        confidence = self.get_confidence_rating(trial)
-        self.eyelink.send_message("CONFIDENCE_SCREEN_OFFSET")
-        
         # ==================================================================
-        # EYELINK: Stop recording
+        # EYELINK: Stop recording — videos done, no need to record
+        #          selection/confidence screens
         # ==================================================================
         self.eyelink.send_message(f"TRIAL_END {trial_id}")
         self.eyelink.stop_recording()
+        
+        # 4. Selection screen (1 or 2) — OUTSIDE recording
+        response, response_time, response_timestamp = self.get_selection(trial)
+        
+        # 5. Confidence rating — OUTSIDE recording
+        confidence = self.get_confidence_rating(trial)
         
         # ==================================================================
         # EYELINK: Send trial variables for Data Viewer

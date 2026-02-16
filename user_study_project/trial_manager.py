@@ -187,12 +187,15 @@ class TrialManager:
                 print(f"WARNING: No stimuli defined for trait '{trait}'")
                 continue
             
-            high_videos = stimuli_dict[trait]["high"]
-            low_videos = stimuli_dict[trait]["low"]
+            high_videos = list(stimuli_dict[trait]["high"])
+            low_videos = list(stimuli_dict[trait]["low"])
             
-            # Create all possible HIGH-LOW pairs (full factorial)
-            for high_video in high_videos:
-                for low_video in low_videos:
+            # Shuffle and pair 1:1 (each high with one low)
+            random.shuffle(high_videos)
+            random.shuffle(low_videos)
+            
+            # Zip to create 1:1 pairs (5 high × 1 low each = 5 pairs per trait)
+            for high_video, low_video in zip(high_videos, low_videos):
                     # Counterbalance first/second order
                     # Use participant_id hash for consistency across sessions
                     order_seed = hash(f"{participant_id}_{trait}_{high_video}_{low_video}")

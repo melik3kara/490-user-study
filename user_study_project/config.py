@@ -160,9 +160,9 @@ INTEREST_AREA_PADDING = 20  # pixels of padding around video
 # TRIAL STRUCTURE SETTINGS
 # ==============================================================================
 
-# Number of trials per trait (each high video paired with each low video)
-# With 5 high and 5 low videos per trait: 5 x 5 = 25 trials per trait
-TRIALS_PER_TRAIT = 25  # Full factorial design
+# Number of trials per trait (each high video paired 1:1 with a low video)
+# With 5 high and 5 low videos per trait: 5 pairs per trait, 25 total
+TRIALS_PER_TRAIT = 5  # 1:1 random pairing
 
 # Randomization settings
 RANDOMIZE_TRIAL_ORDER = True  # Shuffle trials so same trait doesn't repeat

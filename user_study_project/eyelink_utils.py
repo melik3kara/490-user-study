@@ -383,8 +383,8 @@ class EyeLinkManager:
 
         Parameters
         ----------
-        trial_index : int
-            Trial number.
+        trial_index : int or str
+            Trial number or identifier (e.g. 1 or "practice_1").
         status_msg : str, optional
             Message to show on Host PC status bar.
         """
@@ -395,12 +395,23 @@ class EyeLinkManager:
         # Put tracker in offline mode
         self.el_tracker.setOfflineMode()
 
+        # TRIALID must be an integer for Data Viewer
+        if isinstance(trial_index, str):
+            # Practice trials: "practice_1" -> 9001
+            try:
+                practice_num = int(trial_index.split('_')[-1])
+                numeric_id = 9000 + practice_num
+            except (ValueError, IndexError):
+                numeric_id = 9999
+        else:
+            numeric_id = int(trial_index)
+
         # Send TRIALID message (required by Data Viewer)
-        self.el_tracker.sendMessage('TRIALID %d' % trial_index)
+        self.el_tracker.sendMessage('TRIALID %d' % numeric_id)
 
         # Show status on Host PC
         if status_msg is None:
-            status_msg = 'TRIAL number %d' % trial_index
+            status_msg = 'TRIAL number %s' % str(trial_index)
         self.el_tracker.sendCommand("record_status_message '%s'" % status_msg)
 
         # Clear Host PC screen

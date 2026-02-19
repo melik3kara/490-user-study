@@ -190,12 +190,31 @@ class TrialManager:
             high_videos = list(stimuli_dict[trait]["high"])
             low_videos = list(stimuli_dict[trait]["low"])
             
-            # Shuffle and pair 1:1 (each high with one low)
+            # Shuffle HIGH videos
             random.shuffle(high_videos)
-            random.shuffle(low_videos)
             
-            # Zip to create 1:1 pairs (5 high × 1 low each = 5 pairs per trait)
-            for high_video, low_video in zip(high_videos, low_videos):
+            # Ensure we have enough LOW videos for HIGH videos
+            # If LOW < HIGH: cycle and extend, then shuffle
+            # If LOW >= HIGH: use only as many as HIGH, shuffled
+            if len(low_videos) < len(high_videos):
+                # Not enough LOW videos - must reuse some
+                shuffled_low = []
+                while len(shuffled_low) < len(high_videos):
+                    temp = list(low_videos)
+                    random.shuffle(temp)
+                    shuffled_low.extend(temp)
+                shuffled_low = shuffled_low[:len(high_videos)]
+            else:
+                # Enough LOW videos - shuffle and take only what we need
+                shuffled_low = list(low_videos)
+                random.shuffle(shuffled_low)
+                shuffled_low = shuffled_low[:len(high_videos)]
+            
+            # Shuffle the pairing one more time to avoid index-based patterns
+            random.shuffle(shuffled_low)
+            
+            # Zip to create randomized HIGH-LOW pairs (no repetition if possible)
+            for high_video, low_video in zip(high_videos, shuffled_low):
                     # Counterbalance first/second order
                     # Use participant_id hash for consistency across sessions
                     order_seed = hash(f"{participant_id}_{trait}_{high_video}_{low_video}")

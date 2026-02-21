@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#to change the trial number in order to experiment line 1243
 """
 Pairwise Personality Perception Experiment
 ==========================================
@@ -1238,7 +1239,7 @@ class PairwisePerceptionExperiment:
             
             # ----- MAIN EXPERIMENT -----
             print("\nStarting main experiment...")
-            
+            #to change the trial number in order to experiment 
             total_trials = self.trial_manager.get_total_trials()
             
             for trial_idx in range(total_trials):

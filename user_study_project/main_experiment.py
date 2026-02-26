@@ -577,6 +577,14 @@ class PairwisePerceptionExperiment:
         # Clear Data Viewer screen before video
         self.eyelink.clear_data_viewer_screen(128, 128, 128)
         
+        # Prepare video for Data Viewer: copy to session folder and get
+        # the correct relative path for VFRAME messages (computed once,
+        # reused for every frame).
+        video_dv_path = self.eyelink.prepare_video_for_dataviewer(video_path)
+        if video_dv_path is None:
+            # Final fallback: use the raw video path
+            video_dv_path = video_path
+        
         previous_frame_timestamp = 0.0
         
         while True:
@@ -632,19 +640,10 @@ class PairwisePerceptionExperiment:
             
             # Write VFRAME message for Data Viewer video overlay
             if current_frame_timestamp != previous_frame_timestamp:
-                # Compute relative path from DLF file location (graphics/) to video
-                # This matches SR Research demo pattern: e.g. '../../../stimuli/videos/...'
-                if self.eyelink.graphics_folder:
-                    video_relative_path = os.path.relpath(
-                        os.path.abspath(video_path),
-                        self.eyelink.graphics_folder
-                    )
-                else:
-                    video_relative_path = video_path
                 self.eyelink.write_vframe(
                     dlf_file, frame_count, current_frame_timestamp,
                     vid_top_left_x, vid_top_left_y,
-                    video_relative_path, dlf_id
+                    video_dv_path, dlf_id
                 )
                 previous_frame_timestamp = current_frame_timestamp
             

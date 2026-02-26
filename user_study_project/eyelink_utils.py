@@ -31,6 +31,7 @@ Usage:
 import os
 import sys
 import time
+import shutil
 import platform
 
 # ==============================================================================
@@ -88,6 +89,7 @@ class EyeLinkManager:
         # Session folders
         self.session_folder = None
         self.graphics_folder = None  # for VFRAME DLF files
+        self.video_folder = None     # for Data Viewer video copies
 
         # Determine mode
         if not config.EYELINK_ENABLED:
@@ -239,6 +241,12 @@ class EyeLinkManager:
         # Graphics folder for VFRAME DLF files (for Data Viewer video playback)
         self.graphics_folder = os.path.join(self.session_folder, 'graphics')
         os.makedirs(self.graphics_folder, exist_ok=True)
+
+        # Videos folder - copies of videos used in this session for Data Viewer
+        # This ensures Data Viewer can always find the video files referenced
+        # in VFRAME messages, regardless of where the EDF is opened from.
+        self.video_folder = os.path.join(self.session_folder, 'videos')
+        os.makedirs(self.video_folder, exist_ok=True)
 
     # ==========================================================================
     # CALIBRATION
@@ -535,6 +543,69 @@ class EyeLinkManager:
         self.send_message('!V CLEAR %d %d %d' % (r, g, b))
 
     # ==========================================================================
+    # VIDEO PREPARATION FOR DATA VIEWER
+    # ==========================================================================
+
+    def prepare_video_for_dataviewer(self, video_source_path):
+        """
+        Copy a video file to the session's videos folder for Data Viewer.
+
+        This ensures Data Viewer can find the video file referenced in
+        VFRAME messages. The session folder structure becomes self-contained:
+            session/
+                SESSION.EDF
+                graphics/
+                    VC_11.dlf
+                videos/
+                    video_file.mp4
+
+        Parameters
+        ----------
+        video_source_path : str
+            Path to the source video file.
+
+        Returns
+        -------
+        str or None
+            Relative path from graphics/ DLF folder to the video,
+            using forward slashes (as required by Data Viewer).
+            Returns None if copy fails.
+        """
+        if self.video_folder is None:
+            # No session folder (simulation mode) - try relative path fallback
+            if self.graphics_folder:
+                rel = os.path.relpath(
+                    os.path.abspath(video_source_path),
+                    self.graphics_folder
+                )
+                return rel.replace(os.sep, '/')
+            return None
+
+        video_basename = os.path.basename(video_source_path)
+        dest_path = os.path.join(self.video_folder, video_basename)
+
+        # Copy if not already copied
+        if not os.path.exists(dest_path):
+            try:
+                shutil.copy2(os.path.abspath(video_source_path), dest_path)
+                print(f"[EYELINK] Copied video for Data Viewer: {video_basename}")
+            except Exception as e:
+                print(f"[EYELINK WARNING] Could not copy video for Data Viewer: {e}")
+                # Fallback: use direct relative path from graphics/ to source
+                if self.graphics_folder:
+                    rel = os.path.relpath(
+                        os.path.abspath(video_source_path),
+                        self.graphics_folder
+                    )
+                    return rel.replace(os.sep, '/')
+                return None
+
+        # Return relative path from graphics/ to videos/ folder
+        # Structure: session/graphics/VC_X.dlf -> session/videos/file.mp4
+        # Relative path: ../videos/file.mp4
+        return '../videos/' + video_basename
+
+    # ==========================================================================
     # VFRAME MESSAGES (for video playback in Data Viewer)
     # ==========================================================================
 
@@ -599,9 +670,11 @@ class EyeLinkManager:
             self.send_message('!V DRAW_LIST graphics/%s' % dlf_name)
 
         # Write VFRAME message to DLF file
+        # Normalize path separators to forward slashes (required by Data Viewer)
+        safe_path = video_relative_path.replace(os.sep, '/').replace('\\', '/')
         time_offset = -1 * int(frame_timestamp_sec * 1000)
         vframe_msg = '%d VFRAME %d %d %d %s' % (
-            time_offset, frame_num, vid_x, vid_y, video_relative_path
+            time_offset, frame_num, vid_x, vid_y, safe_path
         )
         dlf_file.write(vframe_msg + '\n')
 

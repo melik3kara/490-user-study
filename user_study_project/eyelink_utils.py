@@ -33,6 +33,7 @@ import sys
 import time
 import shutil
 import platform
+import subprocess
 
 # ==============================================================================
 # PYLINK IMPORT - Attempt to import, fallback to simulation
@@ -548,16 +549,19 @@ class EyeLinkManager:
 
     def prepare_video_for_dataviewer(self, video_source_path):
         """
-        Copy a video file to the session's videos folder for Data Viewer.
+        Convert and copy a video file to the session's videos folder for Data Viewer.
 
-        This ensures Data Viewer can find the video file referenced in
-        VFRAME messages. The session folder structure becomes self-contained:
+        Data Viewer's default video handler on Windows often cannot play H.264 MP4.
+        This method re-encodes the video to AVI with MJPEG codec, which Data Viewer
+        supports natively on all platforms without extra codecs or preference changes.
+
+        Session folder structure:
             session/
                 SESSION.EDF
                 graphics/
                     VC_11.dlf
                 videos/
-                    video_file.mp4
+                    video_file.avi   <-- MJPEG AVI for Data Viewer
 
         Parameters
         ----------
@@ -569,7 +573,7 @@ class EyeLinkManager:
         str or None
             Relative path from graphics/ DLF folder to the video,
             using forward slashes (as required by Data Viewer).
-            Returns None if copy fails.
+            Returns None if conversion/copy fails.
         """
         if self.video_folder is None:
             # No session folder (simulation mode) - try relative path fallback
@@ -582,28 +586,47 @@ class EyeLinkManager:
             return None
 
         video_basename = os.path.basename(video_source_path)
-        dest_path = os.path.join(self.video_folder, video_basename)
+        # Change extension to .avi for Data Viewer compatibility
+        avi_basename = os.path.splitext(video_basename)[0] + '.avi'
+        dest_path = os.path.join(self.video_folder, avi_basename)
 
-        # Copy if not already copied
+        # Convert to AVI/MJPEG if not already done
         if not os.path.exists(dest_path):
             try:
-                shutil.copy2(os.path.abspath(video_source_path), dest_path)
-                print(f"[EYELINK] Copied video for Data Viewer: {video_basename}")
-            except Exception as e:
-                print(f"[EYELINK WARNING] Could not copy video for Data Viewer: {e}")
-                # Fallback: use direct relative path from graphics/ to source
-                if self.graphics_folder:
-                    rel = os.path.relpath(
-                        os.path.abspath(video_source_path),
-                        self.graphics_folder
-                    )
-                    return rel.replace(os.sep, '/')
-                return None
+                # Try ffmpeg re-encode to MJPEG AVI (universally supported by Data Viewer)
+                subprocess.run(
+                    [
+                        "ffmpeg", "-y", "-i", os.path.abspath(video_source_path),
+                        "-c:v", "mjpeg", "-q:v", "3",
+                        "-an",  # no audio needed for Data Viewer
+                        dest_path
+                    ],
+                    check=True, capture_output=True, timeout=60
+                )
+                print(f"[EYELINK] Converted video for Data Viewer (MJPEG AVI): {avi_basename}")
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
+                print(f"[EYELINK WARNING] ffmpeg AVI conversion failed: {e}")
+                # Fallback: copy the original MP4 as-is
+                mp4_dest = os.path.join(self.video_folder, video_basename)
+                if not os.path.exists(mp4_dest):
+                    try:
+                        shutil.copy2(os.path.abspath(video_source_path), mp4_dest)
+                        print(f"[EYELINK] Fallback: copied MP4 for Data Viewer: {video_basename}")
+                    except Exception as copy_err:
+                        print(f"[EYELINK WARNING] Could not copy video: {copy_err}")
+                        if self.graphics_folder:
+                            rel = os.path.relpath(
+                                os.path.abspath(video_source_path),
+                                self.graphics_folder
+                            )
+                            return rel.replace(os.sep, '/')
+                        return None
+                return '../videos/' + video_basename
 
         # Return relative path from graphics/ to videos/ folder
-        # Structure: session/graphics/VC_X.dlf -> session/videos/file.mp4
-        # Relative path: ../videos/file.mp4
-        return '../videos/' + video_basename
+        # Structure: session/graphics/VC_X.dlf -> session/videos/file.avi
+        # Relative path: ../videos/file.avi
+        return '../videos/' + avi_basename
 
     # ==========================================================================
     # VFRAME MESSAGES (for video playback in Data Viewer)

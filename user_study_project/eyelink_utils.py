@@ -549,22 +549,19 @@ class EyeLinkManager:
 
     def prepare_video_for_dataviewer(self, video_source_path):
         """
-        Convert and copy a video file to the graphics folder for Data Viewer.
+        Convert and copy a video file to the session's videos folder for Data Viewer.
 
-        Data Viewer resolves VFRAME video paths relative to the DLF file location.
-        When Data Viewer extracts session data to a temp directory, relative paths
-        like '../videos/' break. The solution is to place the video files in the
-        SAME folder as the DLF files (graphics/) and use just the filename.
-
-        Data Viewer's default handler on Windows often cannot play H.264 MP4,
-        so videos are re-encoded to AVI with MJPEG codec.
+        Data Viewer's default video handler on Windows often cannot play H.264 MP4.
+        This method re-encodes the video to AVI with MJPEG codec, which Data Viewer
+        supports natively on all platforms without extra codecs or preference changes.
 
         Session folder structure:
             session/
                 SESSION.EDF
                 graphics/
                     VC_11.dlf
-                    video_file.avi   <-- Same folder as DLF files
+                videos/
+                    video_file.avi   <-- MJPEG AVI for Data Viewer
 
         Parameters
         ----------
@@ -574,21 +571,29 @@ class EyeLinkManager:
         Returns
         -------
         str or None
-            Just the video filename (no path), since it lives next to the DLF.
+            Relative path from graphics/ DLF folder to the video,
+            using forward slashes (as required by Data Viewer).
             Returns None if conversion/copy fails.
         """
-        if self.graphics_folder is None:
+        if self.video_folder is None:
+            # No session folder (simulation mode) - try relative path fallback
+            if self.graphics_folder:
+                rel = os.path.relpath(
+                    os.path.abspath(video_source_path),
+                    self.graphics_folder
+                )
+                return rel.replace(os.sep, '/')
             return None
 
         video_basename = os.path.basename(video_source_path)
         # Change extension to .avi for Data Viewer compatibility
         avi_basename = os.path.splitext(video_basename)[0] + '.avi'
-        dest_path = os.path.join(self.graphics_folder, avi_basename)
+        dest_path = os.path.join(self.video_folder, avi_basename)
 
         # Convert to AVI/MJPEG if not already done
         if not os.path.exists(dest_path):
             try:
-                # Re-encode to MJPEG AVI (universally supported by Data Viewer)
+                # Try ffmpeg re-encode to MJPEG AVI (universally supported by Data Viewer)
                 subprocess.run(
                     [
                         "ffmpeg", "-y", "-i", os.path.abspath(video_source_path),
@@ -601,20 +606,27 @@ class EyeLinkManager:
                 print(f"[EYELINK] Converted video for Data Viewer (MJPEG AVI): {avi_basename}")
             except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
                 print(f"[EYELINK WARNING] ffmpeg AVI conversion failed: {e}")
-                # Fallback: copy the original MP4 as-is into graphics/
-                mp4_dest = os.path.join(self.graphics_folder, video_basename)
+                # Fallback: copy the original MP4 as-is
+                mp4_dest = os.path.join(self.video_folder, video_basename)
                 if not os.path.exists(mp4_dest):
                     try:
                         shutil.copy2(os.path.abspath(video_source_path), mp4_dest)
-                        print(f"[EYELINK] Fallback: copied MP4 to graphics/: {video_basename}")
+                        print(f"[EYELINK] Fallback: copied MP4 for Data Viewer: {video_basename}")
                     except Exception as copy_err:
                         print(f"[EYELINK WARNING] Could not copy video: {copy_err}")
+                        if self.graphics_folder:
+                            rel = os.path.relpath(
+                                os.path.abspath(video_source_path),
+                                self.graphics_folder
+                            )
+                            return rel.replace(os.sep, '/')
                         return None
-                # Return just the MP4 filename (same folder as DLF)
-                return video_basename
+                return '../videos/' + video_basename
 
-        # Return just the filename — video is in the same folder as the DLF
-        return avi_basename
+        # Return relative path from graphics/ to videos/ folder
+        # Structure: session/graphics/VC_X.dlf -> session/videos/file.avi
+        # Relative path: ../videos/file.avi
+        return '../videos/' + avi_basename
 
     # ==========================================================================
     # VFRAME MESSAGES (for video playback in Data Viewer)

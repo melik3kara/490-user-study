@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#to change the trial number in order to experiment line 1243
+#to change the trial number in order to experiment line 1247
 """
 Pairwise Personality Perception Experiment
 ==========================================

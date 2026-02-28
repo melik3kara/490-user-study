@@ -556,6 +556,10 @@ class PairwisePerceptionExperiment:
         vid_top_left_x = int(scn_w / 2.0 - vid_w / 2.0)
         vid_top_left_y = int(scn_h / 2.0 - vid_h / 2.0)
         
+        # Read actual video resolution for face target interest area calculation
+        actual_video_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_video_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
         # Open VFRAME DLF file for Data Viewer video playback overlay
         dlf_file = None
         trial_index = trial.get('trial_id', 0)
@@ -631,11 +635,13 @@ class PairwisePerceptionExperiment:
                     self.eyelink.send_variable("trait", trial['trait'])
                     self.eyelink.send_variable("high_position", trial['high_position'])
                 
-                # Define single centered interest area
-                self.eyelink.define_single_video_interest_area(
+                # Define face target interest area (only the face region, not full video)
+                self.eyelink.define_face_target_interest_area(
                     self.video_pos,
                     config.VIDEO_WIDTH,
-                    config.VIDEO_HEIGHT
+                    config.VIDEO_HEIGHT,
+                    actual_video_w,
+                    actual_video_h
                 )
             
             # Write VFRAME message for Data Viewer video overlay

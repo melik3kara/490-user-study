@@ -672,7 +672,9 @@ class EyeLinkManager:
         # Write VFRAME message to DLF file
         # Normalize path separators to forward slashes (required by Data Viewer)
         safe_path = video_relative_path.replace(os.sep, '/').replace('\\', '/')
-        time_offset = -1 * int(frame_timestamp_sec * 1000)
+        # Time offset must be POSITIVE ms from the DRAW_LIST message for
+        # Data Viewer to play back the video correctly as a backdrop.
+        time_offset = int(frame_timestamp_sec * 1000)
         vframe_msg = '%d VFRAME %d %d %d %s' % (
             time_offset, frame_num, vid_x, vid_y, safe_path
         )
@@ -734,6 +736,82 @@ class EyeLinkManager:
             int(vx_screen + half_w),
             int(vy_screen + half_h),
             "VIDEO"
+        )
+
+    def define_face_target_interest_area(self, video_pos, display_width, display_height,
+                                          actual_video_width, actual_video_height):
+        """
+        Define an interest area covering ONLY the face target region.
+
+        The preprocessed videos have a face region of
+        (FACE_BOX_SIZE * FACE_ZOOM_FACTOR) pixels centered in the video frame.
+        This method calculates where that face region appears on screen after
+        the video is scaled to the display size, and defines the interest area
+        accordingly.
+
+        Parameters
+        ----------
+        video_pos : tuple
+            (x, y) center position of the video in PsychoPy coordinates.
+        display_width : int
+            Display width of the video on screen (config.VIDEO_WIDTH).
+        display_height : int
+            Display height of the video on screen (config.VIDEO_HEIGHT).
+        actual_video_width : int
+            Actual pixel width of the preprocessed video file.
+        actual_video_height : int
+            Actual pixel height of the preprocessed video file.
+        """
+        padding = getattr(self.config, 'INTEREST_AREA_PADDING', 20)
+        face_box = getattr(self.config, 'FACE_BOX_SIZE', 200)
+        zoom = getattr(self.config, 'FACE_ZOOM_FACTOR', 2)
+
+        # Face region in the preprocessed video (pixels)
+        face_pixels = face_box * zoom  # e.g. 200 * 2 = 400
+
+        # Scale factors from video resolution to display size
+        if actual_video_width > 0 and actual_video_height > 0:
+            scale_x = display_width / actual_video_width
+            scale_y = display_height / actual_video_height
+        else:
+            scale_x = 1.0
+            scale_y = 1.0
+
+        # Face region on screen (in display pixels)
+        face_display_w = face_pixels * scale_x
+        face_display_h = face_pixels * scale_y
+
+        half_w = int(face_display_w / 2.0) + padding
+        half_h = int(face_display_h / 2.0) + padding
+
+        # Convert PsychoPy center coords to EyeLink top-left coords
+        screen_cx = self.scn_width // 2 if self.scn_width > 0 else self.config.SCREEN_WIDTH // 2
+        screen_cy = self.scn_height // 2 if self.scn_height > 0 else self.config.SCREEN_HEIGHT // 2
+
+        vx, vy = video_pos
+        vx_screen = int(screen_cx + vx)
+        vy_screen = int(screen_cy - vy)  # Flip Y axis
+
+        # Face target interest area (IA 1)
+        self.define_interest_area(
+            1,
+            vx_screen - half_w,
+            vy_screen - half_h,
+            vx_screen + half_w,
+            vy_screen + half_h,
+            "FACE_TARGET"
+        )
+
+        # Background / non-face area (IA 2) — full video region
+        vid_half_w = display_width // 2 + padding
+        vid_half_h = display_height // 2 + padding
+        self.define_interest_area(
+            2,
+            vx_screen - vid_half_w,
+            vy_screen - vid_half_h,
+            vx_screen + vid_half_w,
+            vy_screen + vid_half_h,
+            "VIDEO_BACKGROUND"
         )
 
     # ==========================================================================

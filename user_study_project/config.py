@@ -153,8 +153,15 @@ EYELINK_DATA_FOLDER = "eyelink_data"
 EYELINK_FILE_PREFIX = "el"
 
 # Interest areas for analysis (relative to screen center)
-# These define rectangular regions around each video
-INTEREST_AREA_PADDING = 20  # pixels of padding around video
+# These define rectangular regions around the face target
+INTEREST_AREA_PADDING = 20  # pixels of padding around face target
+
+# Face target area configuration (must match blur.py preprocessing)
+# The preprocessed videos have a face region of
+# FACE_BOX_SIZE * FACE_ZOOM_FACTOR pixels, centered in the video frame.
+FACE_BOX_SIZE = 200    # Fixed bounding box size used in blur.py
+FACE_ZOOM_FACTOR = 2   # Zoom factor used in blur.py
+# Effective face region in the preprocessed video = 200 * 2 = 400 pixels
 
 # ==============================================================================
 # TRIAL STRUCTURE SETTINGS

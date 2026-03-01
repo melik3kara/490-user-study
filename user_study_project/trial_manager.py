@@ -65,14 +65,16 @@ class TrialManager:
             # Convert trait name to folder name (lowercase with underscores)
             trait_folder = trait.lower().replace(" ", "_")
             
-            # Get high videos
-            high_pattern = os.path.join(base_path, trait_folder, "high", "*.mp4")
-            high_videos = glob.glob(high_pattern)
+            # Get high videos (support both .avi and .mp4)
+            high_pattern_avi = os.path.join(base_path, trait_folder, "high", "*.avi")
+            high_pattern_mp4 = os.path.join(base_path, trait_folder, "high", "*.mp4")
+            high_videos = glob.glob(high_pattern_avi) + glob.glob(high_pattern_mp4)
             high_videos = [os.path.basename(v) for v in sorted(high_videos)]
             
-            # Get low videos
-            low_pattern = os.path.join(base_path, trait_folder, "low", "*.mp4")
-            low_videos = glob.glob(low_pattern)
+            # Get low videos (support both .avi and .mp4)
+            low_pattern_avi = os.path.join(base_path, trait_folder, "low", "*.avi")
+            low_pattern_mp4 = os.path.join(base_path, trait_folder, "low", "*.mp4")
+            low_videos = glob.glob(low_pattern_avi) + glob.glob(low_pattern_mp4)
             low_videos = [os.path.basename(v) for v in sorted(low_videos)]
             
             if high_videos and low_videos:

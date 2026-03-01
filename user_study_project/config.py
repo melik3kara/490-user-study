@@ -79,7 +79,7 @@ QUESTION_TEMPLATES = {
 }
 
 # Base video folder path
-VIDEO_BASE_PATH = "stimuli/videos/study_videos_preprocessed"
+VIDEO_BASE_PATH = "stimuli/videos/study_videos_preprocessed_avi"
 
 # ==============================================================================
 # RESPONSE SETTINGS

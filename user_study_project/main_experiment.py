@@ -36,6 +36,12 @@ import sys
 import random
 from datetime import datetime
 
+# Ensure the script's directory is on sys.path so local imports work
+# even when the script is launched from a different working directory.
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+if _script_dir not in sys.path:
+    sys.path.insert(0, _script_dir)
+
 # PsychoPy imports
 from psychopy import visual, core, event, gui, monitors
 from psychopy import logging as psychopy_logging

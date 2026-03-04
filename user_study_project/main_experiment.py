@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#to change the trial number in order to experiment line 1243
+#to change the trial number in order to experiment line 1252
 """
 Pairwise Personality Perception Experiment
 ==========================================
@@ -218,7 +218,7 @@ class PairwisePerceptionExperiment:
             text='',  # Set dynamically per trial
             pos=(0, 100),
             height=36,
-            color='black',
+            color='white',
             wrapWidth=800,
         )
         
@@ -228,7 +228,7 @@ class PairwisePerceptionExperiment:
             text='Press 1 for FIRST video\nPress 2 for SECOND video',
             pos=(0, -100),
             height=28,
-            color='black',
+            color='white',
         )
         
         # Confidence prompt
@@ -237,7 +237,7 @@ class PairwisePerceptionExperiment:
             text=config.CONFIDENCE_PROMPT,
             pos=(0, 50),
             height=28,
-            color='black',
+            color='white',
             wrapWidth=800,
         )
         
@@ -247,7 +247,7 @@ class PairwisePerceptionExperiment:
             text='1        2        3        4        5',
             pos=(0, -50),
             height=36,
-            color='black',
+            color='white',
         )
         
         # Instruction text
@@ -256,7 +256,7 @@ class PairwisePerceptionExperiment:
             text='',
             pos=(0, 0),
             height=24,
-            color='black',
+            color='white',
             wrapWidth=800,
         )
         
@@ -266,7 +266,7 @@ class PairwisePerceptionExperiment:
             text=config.CONSENT_FORM_TEXT,
             pos=(0, 50),
             height=18,
-            color='black',
+            color='white',
             wrapWidth=900,
             alignText='left',
         )
@@ -276,7 +276,7 @@ class PairwisePerceptionExperiment:
             text='Press SPACE to agree and continue, or ESCAPE to quit.',
             pos=(0, -350),
             height=24,
-            color='darkgreen',
+            color='lightgreen',
             bold=True,
         )
     
@@ -520,6 +520,11 @@ class PairwisePerceptionExperiment:
         """
         Play a single video at the center of the screen.
         
+        Each video gets its OWN EyeLink recording in the EDF file so that
+        Data Viewer shows two separate "trials" per experiment trial.
+
+        EDF trial IDs follow the convention  <trial_id>_<video_num>.
+        
         Includes EyeLink VFRAME messages for Data Viewer video overlay,
         interest area definitions, and tracker recording verification.
         
@@ -552,6 +557,10 @@ class PairwisePerceptionExperiment:
         video_clock = core.Clock()
         
         video_name = trial['video_first'] if video_num == 1 else trial['video_second']
+        trial_id = trial['trial_id']
+        
+        # Unique EDF trial ID for this video recording
+        edf_trial_id = f"{trial_id}_{video_num}"
         
         # Video dimensions for VFRAME coordinate calculation
         vid_w = config.VIDEO_WIDTH
@@ -581,19 +590,34 @@ class PairwisePerceptionExperiment:
             dlf_id = trial_index * 10 + video_num
         dlf_file = self.eyelink.open_vframe_file(dlf_id)
         
+        # ==================================================================
+        # EYELINK: Start a NEW trial+recording for this video
+        # ==================================================================
+        self.eyelink.trial_start(
+            trial_index=edf_trial_id,
+            status_msg=f"TRIAL {trial_id} V{video_num} - {trial['trait']}"
+        )
+        
         # Draw video box on Host PC screen
         self.eyelink.draw_host_video_box(vid_w, vid_h)
         
         # Clear Data Viewer screen before video
-        self.eyelink.clear_data_viewer_screen(128, 128, 128)
+        self.eyelink.clear_data_viewer_screen(0, 0, 0)
         
-        # Prepare video for Data Viewer: copy to session folder and get
-        # the correct relative path for VFRAME messages (computed once,
-        # reused for every frame).
-        video_dv_path = self.eyelink.prepare_video_for_dataviewer(video_path)
-        if video_dv_path is None:
-            # Final fallback: use the raw video path
-            video_dv_path = video_path
+        # Build video path for VFRAME messages.
+        # DLF files live in eyelink_data/SESSION/graphics/.
+        # We need a relative path from that folder to the video file.
+        if self.eyelink.graphics_folder:
+            video_dv_path = os.path.relpath(
+                os.path.abspath(video_path),
+                os.path.abspath(self.eyelink.graphics_folder)
+            )
+        else:
+            # Fallback: relative from project root (old behaviour)
+            video_dv_path = os.path.join('../../..', video_path)
+        
+        # Start recording for this video
+        self.eyelink.start_recording(edf_trial_id)
         
         previous_frame_timestamp = 0.0
         
@@ -635,11 +659,7 @@ class PairwisePerceptionExperiment:
                 )
                 
                 # EyeLink markers
-                self.eyelink.send_message(f"VIDEO{video_num}_ONSET {trial['trial_id']}")
-                self.eyelink.send_variable(f"video{video_num}", video_name)
-                if video_num == 1:
-                    self.eyelink.send_variable("trait", trial['trait'])
-                    self.eyelink.send_variable("high_position", trial['high_position'])
+                self.eyelink.send_message(f"VIDEO_ONSET {edf_trial_id}")
                 
                 # Define face target interest area (only the face region, not full video)
                 self.eyelink.define_face_target_interest_area(
@@ -685,9 +705,17 @@ class PairwisePerceptionExperiment:
         if dlf_file:
             dlf_file.close()
         
+        # EyeLink video offset marker
+        self.eyelink.send_message(f"VIDEO_OFFSET {edf_trial_id}")
+        
         # Clear screen and send blank message
         self.eyelink.send_message('blank_screen')
-        self.eyelink.clear_data_viewer_screen(128, 128, 128)
+        self.eyelink.clear_data_viewer_screen(0, 0, 0)
+        
+        # ==================================================================
+        # EYELINK: Stop recording for this video
+        # ==================================================================
+        self.eyelink.stop_recording()
         
         # Log video offset
         offset_time = self.data_logger.log_event(
@@ -695,11 +723,27 @@ class PairwisePerceptionExperiment:
             trial_id=trial['trial_id'],
             frame_number=self.frame_count
         )
-        self.eyelink.send_message(f"VIDEO{video_num}_OFFSET {trial['trial_id']}")
         
         # Send video duration as variable
         vid_duration = int(video_clock.getTime() * 1000)
-        self.eyelink.send_variable(f"video{video_num}_duration_ms", vid_duration)
+        self.eyelink.send_variable(f"video_duration_ms", vid_duration)
+        
+        # ==================================================================
+        # EYELINK: Send trial variables for this video recording
+        # ==================================================================
+        self.eyelink.send_variable("experiment_trial_id", trial_id)
+        self.eyelink.send_variable("video_num", video_num)
+        self.eyelink.send_variable("video_file", video_name)
+        self.eyelink.send_variable("trait", trial['trait'])
+        self.eyelink.send_variable("high_position", trial['high_position'])
+        is_high = (video_num == 1 and trial['high_position'] == 'first') or \
+                  (video_num == 2 and trial['high_position'] == 'second')
+        self.eyelink.send_variable("is_high_video", is_high)
+        
+        # ==================================================================
+        # EYELINK: Mark trial result (required by Data Viewer)
+        # ==================================================================
+        self.eyelink.send_trial_result()
         
         print(f"Video {video_num}: Played {frame_count} frames ({vid_duration}ms)")
         return onset_time, offset_time
@@ -870,7 +914,7 @@ class PairwisePerceptionExperiment:
             text='Watch both videos carefully, then make your selection.\n\nPress SPACE to start watching.',
             pos=(0, -150),
             height=24,
-            color='black',
+            color='white',
         )
         
         event.clearEvents()
@@ -900,16 +944,19 @@ class PairwisePerceptionExperiment:
         tuple
             (response, response_time, response_timestamp)
         """
-        # Get the question for this trial
-        question_text = trial.get('question', 'Which person appeared MORE like the description?')
+        # Get the trait-specific question (same one shown before videos)
+        question_text = config.QUESTION_TEMPLATES.get(
+            trial.get('trait', ''),
+            trial.get('question', 'Which person appeared MORE like the description?')
+        )
         
         # Question text (the trait description)
         question_stim = visual.TextStim(
             win=self.win,
             text=question_text,
-            pos=(0, 150),
+            pos=(0, 200),
             height=36,
-            color='black',
+            color='white',
             wrapWidth=1400,
         )
         
@@ -919,7 +966,7 @@ class PairwisePerceptionExperiment:
             text='Select your answer:',
             pos=(0, 50),
             height=28,
-            color='gray',
+            color='lightgray',
         )
         
         event.clearEvents()
@@ -1063,14 +1110,13 @@ class PairwisePerceptionExperiment:
         """
         Execute a single trial.
         
-        Follows the SR Research recommended trial protocol:
-        1. trial_start() - TRIALID message, Host status
-        2. drift_check() - before each trial
-        3. start_recording()
-        4. Present stimuli with EDF messages
-        5. stop_recording()
-        6. Send trial variables
-        7. send_trial_result() - TRIAL_RESULT message
+        Each trial creates TWO separate EyeLink recordings in the EDF file,
+        one per video.  This means Data Viewer will show two "trials" per
+        experiment trial, each containing only the 15-second video period.
+
+        EDF trial IDs use the convention:
+            <trial_id>_1  – first video
+            <trial_id>_2  – second video
         
         Parameters
         ----------
@@ -1089,21 +1135,6 @@ class PairwisePerceptionExperiment:
         # Hide mouse cursor
         self.win.mouseVisible = False
         
-        # ==================================================================
-        # EYELINK: Trial setup (TRIALID, status, Host screen)
-        # ==================================================================
-        self.eyelink.trial_start(
-            trial_index=trial_id,
-            status_msg=f"TRIAL {trial_id} - {trial['trait']}"
-        )
-        
-        # ==================================================================
-        # EYELINK: Drift check (recommended before each trial)
-        # Skip for practice trials to save time, but do for main trials
-        # ==================================================================
-        if config.EYELINK_ENABLED and not is_practice:
-            self.eyelink.drift_check()
-        
         # Log trial start
         trial_start_time = self.data_logger.log_event(
             'trial_start',
@@ -1120,46 +1151,21 @@ class PairwisePerceptionExperiment:
         self.show_fixation(self.fixation_frames)
         
         # ==================================================================
-        # EYELINK: Start recording — ONLY for video presentation
+        # EYELINK: Drift check (recommended before video playback)
+        # Skip for practice trials to save time
         # ==================================================================
-        self.eyelink.start_recording(trial_id)
-        self.eyelink.send_message(f"TRIAL_START {trial_id}")
+        if config.EYELINK_ENABLED and not is_practice:
+            self.eyelink.drift_check()
         
         # 3. Video presentation (sequential: first then second)
+        #    Recording is started/stopped INSIDE show_videos, per video
         video_timing = self.show_videos(trial, self.video_frames)
-        
-        # ==================================================================
-        # EYELINK: Stop recording — videos done, no need to record
-        #          selection/confidence screens
-        # ==================================================================
-        self.eyelink.send_message(f"TRIAL_END {trial_id}")
-        self.eyelink.stop_recording()
         
         # 4. Selection screen (1 or 2) — OUTSIDE recording
         response, response_time, response_timestamp = self.get_selection(trial)
         
         # 5. Confidence rating — OUTSIDE recording
         confidence = self.get_confidence_rating(trial)
-        
-        # ==================================================================
-        # EYELINK: Send trial variables for Data Viewer
-        # ==================================================================
-        self.eyelink.send_variable("trial_id", trial_id)
-        self.eyelink.send_variable("trait", trial['trait'])
-        self.eyelink.send_variable("video_first", trial['video_first'])
-        self.eyelink.send_variable("video_second", trial['video_second'])
-        self.eyelink.send_variable("high_position", trial['high_position'])
-        self.eyelink.send_variable("response", response)
-        self.eyelink.send_variable("response_correct", response == trial['high_position'])
-        self.eyelink.send_variable("response_time", f"{response_time:.4f}")
-        if confidence is not None:
-            self.eyelink.send_variable("confidence", confidence)
-        self.eyelink.send_variable("is_practice", is_practice)
-        
-        # ==================================================================
-        # EYELINK: Mark trial result (required by Data Viewer)
-        # ==================================================================
-        self.eyelink.send_trial_result()
         
         # 5. Inter-trial interval
         self.show_inter_trial_interval(self.iti_frames)
@@ -1252,7 +1258,7 @@ class PairwisePerceptionExperiment:
             print("\nStarting main experiment...")
             #to change the trial number in order to experiment 
             total_trials = self.trial_manager.get_total_trials()
-            
+            #BURASİİİİİİİİİ!!!!!!!
             for trial_idx in range(total_trials):
                 trial = self.trial_manager.get_trial(trial_idx)
                 self.trial_manager.current_trial_index = trial_idx

@@ -393,7 +393,11 @@ class EyeLinkManager:
         Parameters
         ----------
         trial_index : int or str
-            Trial number or identifier (e.g. 1 or "practice_1").
+            Trial number or identifier.
+            Supported formats:
+              - int:  e.g. 1
+              - str:  "1_1" (trial 1, video 1)
+              - str:  "practice_1_1" (practice trial 1, video 1)
         status_msg : str, optional
             Message to show on Host PC status bar.
         """
@@ -404,14 +408,25 @@ class EyeLinkManager:
         # Put tracker in offline mode
         self.el_tracker.setOfflineMode()
 
-        # TRIALID must be an integer for Data Viewer
+        # TRIALID must be an integer for Data Viewer — derive unique numeric ID
         if isinstance(trial_index, str):
-            # Practice trials: "practice_1" -> 9001
-            try:
-                practice_num = int(trial_index.split('_')[-1])
-                numeric_id = 9000 + practice_num
-            except (ValueError, IndexError):
-                numeric_id = 9999
+            parts = trial_index.split('_')
+            if parts[0] == 'practice':
+                # "practice_1_1" → 9000 + practice_num * 10 + video_num
+                try:
+                    practice_num = int(parts[1]) if len(parts) > 1 else 0
+                    video_num = int(parts[2]) if len(parts) > 2 else 0
+                    numeric_id = 9000 + practice_num * 10 + video_num
+                except (ValueError, IndexError):
+                    numeric_id = 9999
+            else:
+                # "1_1" → trial_num * 10 + video_num
+                try:
+                    trial_num = int(parts[0])
+                    video_num = int(parts[1]) if len(parts) > 1 else 0
+                    numeric_id = trial_num * 10 + video_num
+                except (ValueError, IndexError):
+                    numeric_id = 9999
         else:
             numeric_id = int(trial_index)
 
@@ -481,7 +496,7 @@ class EyeLinkManager:
             self.el_tracker.stopRecording()
 
         # Clear Data Viewer screen
-        bgcolor_RGB = (128, 128, 128)
+        bgcolor_RGB = (0, 0, 0)
         self.el_tracker.sendMessage('!V CLEAR %d %d %d' % bgcolor_RGB)
 
         # Mark trial as error
@@ -539,7 +554,7 @@ class EyeLinkManager:
 
         self.send_message('TRIAL_RESULT %d' % result_code)
 
-    def clear_data_viewer_screen(self, r=128, g=128, b=128):
+    def clear_data_viewer_screen(self, r=0, g=0, b=0):
         """Send message to clear Data Viewer screen."""
         self.send_message('!V CLEAR %d %d %d' % (r, g, b))
 
@@ -693,13 +708,9 @@ class EyeLinkManager:
             self.send_message('!V DRAW_LIST graphics/%s' % dlf_name)
 
         # Write VFRAME message to DLF file
-        # Normalize path separators to forward slashes (required by Data Viewer)
-        safe_path = video_relative_path.replace(os.sep, '/').replace('\\', '/')
-        # Time offset must be POSITIVE ms from the DRAW_LIST message for
-        # Data Viewer to play back the video correctly as a backdrop.
-        time_offset = int(frame_timestamp_sec * 1000)
+        time_offset = -1 * int(frame_timestamp_sec * 1000)
         vframe_msg = '%d VFRAME %d %d %d %s' % (
-            time_offset, frame_num, vid_x, vid_y, safe_path
+            time_offset, frame_num, vid_x, vid_y, video_relative_path
         )
         dlf_file.write(vframe_msg + '\n')
 

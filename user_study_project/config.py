@@ -26,7 +26,7 @@ FULLSCREEN = True
 SCREEN_NUMBER = 0  # 0 for primary, 1 for secondary monitor
 
 # Background color (RGB, -1 to 1)
-BACKGROUND_COLOR = (0.5, 0.5, 0.5)  # mid-gray
+BACKGROUND_COLOR = (-1, -1, -1)  # black
 
 # ==============================================================================
 # TIMING SETTINGS (in seconds)
@@ -79,7 +79,7 @@ QUESTION_TEMPLATES = {
 }
 
 # Base video folder path
-VIDEO_BASE_PATH = "stimuli/videos/study_videos_preprocessed_avi"
+VIDEO_BASE_PATH = "stimuli/videos/study_videos_preprocessed"
 
 # ==============================================================================
 # RESPONSE SETTINGS

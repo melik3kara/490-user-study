@@ -1,33 +1,22 @@
 """
-Convert preprocessed MP4 videos to AVI (MJPEG) for SR Research Data Viewer,
-and replace the black background/margins with experiment gray (191, 191, 191).
+Convert preprocessed MP4 videos to AVI (MJPEG) for SR Research Data Viewer.
 
-This matches the PsychoPy BACKGROUND_COLOR = (0.5, 0.5, 0.5) which maps to
-RGB (191, 191, 191) in 0-255 range.  PsychoPy uses -1..1 range where
-0.5 → int((0.5 + 1) / 2 * 255) = 191.
+Data Viewer's default video handler cannot play H.264 MP4. This script
+re-encodes to MJPEG AVI which is natively supported.
 
 Output folder: study_videos_preprocessed_avi/  (same subfolder structure)
 """
 
 import cv2
 import os
-import numpy as np
 
 # Paths
 input_root = "/Users/melikekara/Documents/GitHub/490-user-study/user_study_project/stimuli/videos/study_videos_preprocessed"
 output_root = "/Users/melikekara/Documents/GitHub/490-user-study/user_study_project/stimuli/videos/study_videos_preprocessed_avi"
 
-# Gray background matching PsychoPy BACKGROUND_COLOR = (0.5, 0.5, 0.5)
-# PsychoPy range is -1 to 1, so 0.5 → (0.5+1)/2 * 255 ≈ 191
-GRAY_VALUE = 191
-GRAY_BGR = (GRAY_VALUE, GRAY_VALUE, GRAY_VALUE)
-
-# Black pixel threshold — pixels darker than this are considered "background"
-BLACK_THRESHOLD = 15
-
 
 def convert_video(input_path, output_path):
-    """Convert a single MP4 to AVI/MJPEG, replacing black margins with gray."""
+    """Convert a single MP4 to AVI/MJPEG (no pixel modification)."""
     print(f"Converting: {input_path}")
 
     cap = cv2.VideoCapture(input_path)
@@ -62,11 +51,6 @@ def convert_video(input_path, output_path):
         ret, frame = cap.read()
         if not ret:
             break
-
-        # Replace black/near-black pixels with gray
-        # A pixel is "black background" if ALL channels are below threshold
-        mask = np.all(frame < BLACK_THRESHOLD, axis=2)
-        frame[mask] = GRAY_BGR
 
         out.write(frame)
         frame_count += 1

@@ -457,7 +457,7 @@ class TrialManager:
     def save_trial_list(self, filepath, participant_id):
         """
         Save the trial list to a file for reproducibility.
-        
+
         Parameters
         ----------
         filepath : str
@@ -466,13 +466,17 @@ class TrialManager:
             Participant identifier.
         """
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        
+
         with open(filepath, 'w', newline='') as f:
             if self.trials:
-                writer = csv.DictWriter(f, fieldnames=self.trials[0].keys())
+                fieldnames = ['participant_id'] + list(self.trials[0].keys())
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
-                writer.writerows(self.trials)
-        
+                for trial in self.trials:
+                    row = {'participant_id': participant_id}
+                    row.update(trial)
+                    writer.writerow(row)
+
         print(f"Trial list saved to: {filepath}")
     
     def load_trial_list(self, filepath):

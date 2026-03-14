@@ -26,7 +26,8 @@ FULLSCREEN = True
 SCREEN_NUMBER = 0  # 0 for primary, 1 for secondary monitor
 
 # Background color (RGB, -1 to 1)
-BACKGROUND_COLOR = (-1, -1, -1)  # black
+BACKGROUND_COLOR = (0, 0, 0)  # grey for calibration & instruction screens
+TRIAL_BACKGROUND_COLOR = (-1, -1, -1)  # black for video & question screens
 
 # ==============================================================================
 # TIMING SETTINGS (in seconds)

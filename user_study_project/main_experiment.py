@@ -337,6 +337,13 @@ class PairwisePerceptionExperiment:
                 stimuli_dict=None  # Use subset of real videos
             )
         
+        # Save trial list for reproducibility
+        trial_list_path = os.path.join(
+            "trials",
+            f"trial_list_{self.participant_id}_session{self.session}.csv"
+        )
+        self.trial_manager.save_trial_list(trial_list_path, self.participant_id)
+
         # Print trial summary
         summary = self.trial_manager.get_trial_summary()
         print(f"Generated {summary['total_trials']} trials")
@@ -604,16 +611,12 @@ class PairwisePerceptionExperiment:
         # Clear Data Viewer screen before video
         self.eyelink.clear_data_viewer_screen(0, 0, 0)
         
-        # Build video path for VFRAME messages.
-        # DLF files live in eyelink_data/SESSION/graphics/.
-        # We need a relative path from that folder to the video file.
-        if self.eyelink.graphics_folder:
-            video_dv_path = os.path.relpath(
-                os.path.abspath(video_path),
-                os.path.abspath(self.eyelink.graphics_folder)
-            )
-        else:
-            # Fallback: relative from project root (old behaviour)
+        # Copy/convert video into session folder and get portable relative path
+        # for Data Viewer. This makes the EDF + session folder self-contained
+        # so it works when opened on any computer.
+        video_dv_path = self.eyelink.prepare_video_for_dataviewer(video_path)
+        if video_dv_path is None:
+            # Fallback: relative from project root
             video_dv_path = os.path.join('../../..', video_path)
         
         # Start recording for this video
@@ -1248,13 +1251,23 @@ class PairwisePerceptionExperiment:
             # ----- PRACTICE TRIALS -----
             if config.INCLUDE_PRACTICE and self.trial_manager.practice_trials:
                 self.show_instruction_screen(config.PRACTICE_START_TEXT)
-                
+
+                # Switch to black for trials
+                self.win.color = config.TRIAL_BACKGROUND_COLOR
+                self.win.flip()
+
                 for practice_trial in self.trial_manager.practice_trials:
                     self.run_trial(practice_trial, is_practice=True)
-                
+
+                # Switch back to grey for instruction
+                self.win.color = config.BACKGROUND_COLOR
+                self.win.flip()
                 self.show_instruction_screen(config.EXPERIMENT_START_TEXT)
-            
+
             # ----- MAIN EXPERIMENT -----
+            # Switch to black for video & question screens
+            self.win.color = config.TRIAL_BACKGROUND_COLOR
+            self.win.flip()
             print("\nStarting main experiment...")
             #to change the trial number in order to experiment 
             total_trials = self.trial_manager.get_total_trials()
@@ -1275,6 +1288,8 @@ class PairwisePerceptionExperiment:
                       f"RT: {results['response_time']}s")
             
             # ----- COMPLETION -----
+            self.win.color = config.BACKGROUND_COLOR
+            self.win.flip()
             self.show_instruction_screen(config.END_TEXT)
             
             print("\nExperiment completed successfully!")

@@ -1,0 +1,78 @@
+05 - GAZE PATTERN ANALYSIS
+===========================
+
+PURPOSE: Deep dive into WHERE people look on faces when forming personality
+judgments. This is the core eye-tracking contribution of your study.
+
+DATA NEEDED:
+- Eye tracking fixation data (x, y coordinates, duration)
+- Video frame dimensions and face landmark positions
+- AOI definitions for face regions
+
+PREREQUISITE - FACE AOI DEFINITION:
+- Use face landmark detection (e.g., dlib, MediaPipe) on stimulus videos
+- Define AOIs: left eye, right eye, nose, mouth, forehead, chin, left cheek, right cheek
+- Map gaze coordinates to AOIs per frame (since videos show moving faces)
+
+ANALYSES TO RUN:
+----------------
+
+1. GAZE HEATMAPS
+   - Aggregate gaze data across all participants for each video
+   - Create heatmaps overlaid on representative video frames
+   - Compare heatmaps: correct vs incorrect trials
+   - Compare heatmaps: high confidence vs low confidence trials
+   - Visualization: heatmap grid (trait x accuracy)
+
+2. FACE REGION DWELL TIME
+   - Proportion of viewing time on each face AOI
+   - Eyes vs mouth dominance: which region gets more attention?
+   - Dwell time ratios across traits
+   - Literature comparison: face processing studies show eye-region dominance
+
+3. FIRST FIXATION ANALYSIS
+   - Where do people look first on each face video?
+   - First fixation location distribution (eyes? nose? center?)
+   - First fixation duration: longer = more initial processing
+   - Does first fixation location predict response accuracy?
+
+4. GAZE TRANSITIONS (CRITICAL FOR YOUR STUDY)
+   - Number of transitions between Video 1 and Video 2 regions
+   - "Comparison behavior": how often do participants mentally compare?
+   - NOTE: In your sequential design, this means comparing fixation patterns
+     during Video 1 vs Video 2, not simultaneous transitions
+   - Within each video: transitions between face AOIs
+
+5. CHOSEN vs UNCHOSEN VIDEO GAZE
+   - Total dwell time on the video eventually chosen vs not chosen
+   - "Gaze cascade effect" (Shimojo et al., 2003):
+     People tend to look more at the option they will choose
+   - This is a strong finding to replicate in personality perception context
+
+6. GAZE CONSISTENCY ACROSS PARTICIPANTS
+   - Do different people look at the same face regions?
+   - Inter-subject correlation of gaze patterns
+   - Normalized scanpath similarity (using string-edit distance or correlation)
+   - High consistency = face region is objectively important for that trait
+
+7. GAZE ENTROPY
+   - Shannon entropy of gaze distribution across AOIs
+   - Higher entropy = more distributed/exploratory looking
+   - Lower entropy = more focused looking
+   - Compare entropy across traits and correct/incorrect trials
+   - Hypothesis: more difficult traits produce higher gaze entropy
+
+STATISTICAL METHODS:
+- Repeated-measures ANOVA (AOI x trait on dwell time)
+- Chi-square (first fixation location distribution)
+- Paired t-test (chosen vs unchosen dwell time)
+- Mixed-effects models (participant random, trait/AOI fixed)
+- Permutation tests for scanpath similarity
+
+OUTPUT FILES TO GENERATE:
+- heatmaps/ (per trait, per video)
+- aoi_dwell_proportions.csv
+- first_fixation_analysis.csv
+- gaze_transitions.csv
+- gaze_entropy_by_trait.png
+- chosen_vs_unchosen_dwell.png

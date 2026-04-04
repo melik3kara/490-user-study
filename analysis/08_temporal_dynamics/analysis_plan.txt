@@ -1,0 +1,65 @@
+08 - TEMPORAL DYNAMICS ANALYSIS
+================================
+
+PURPOSE: Examine how gaze behavior and decision-making unfold OVER TIME
+within each trial and across the experiment session.
+
+DATA NEEDED:
+- Eye tracking sample data (time-stamped x, y, pupil)
+- Event logs with precise timestamps
+- Behavioral data with trial ordering
+
+ANALYSES TO RUN:
+----------------
+
+1. WITHIN-TRIAL GAZE EVOLUTION
+   - Divide each 16-second video into time bins (e.g., 4 x 4-second bins)
+   - How does gaze distribution change from start to end of video?
+   - Early: exploratory scanning? Late: focused on diagnostic regions?
+   - Compare first half vs second half of video viewing
+
+2. PUPIL DILATION TIMECOURSE
+   - Time-locked pupil traces aligned to video onset
+   - Baseline-corrected (subtract pre-trial fixation pupil size)
+   - Compare timecourse for correct vs incorrect trials
+   - Compare timecourse across traits
+   - Peak dilation timing: when does cognitive effort peak?
+
+3. DECISION FORMATION OVER TIME
+   - "Gaze bias" timecourse: at each time point, proportion of gaze on
+     eventually-chosen video
+   - Does gaze bias emerge early (fast decisions) or late (deliberated)?
+   - For your sequential design: compare gaze intensity during Video 1 vs Video 2
+
+4. ACROSS-TRIAL LEARNING EFFECTS
+   - Does accuracy improve from trial 1 to trial 125?
+   - Does RT decrease over trials (learning/practice)?
+   - Does gaze strategy change (e.g., more efficient fixation patterns)?
+   - Block analysis: divide into 5 blocks of 25 trials
+
+5. FATIGUE EFFECTS
+   - Compare performance in first half vs second half of experiment
+   - Pupil size trend: decreasing pupil = fatigue
+   - Fixation duration trend: longer fixations = fatigue/disengagement
+   - RT trend: increasing RT = fatigue
+   - Break effects: does performance recover after scheduled breaks?
+
+6. TRAIT ORDER EFFECTS
+   - Since trait order is randomized, check:
+     * Does seeing Extraversion trials first affect later trait judgments?
+     * Are there carryover effects between traits?
+   - Partial correlation controlling for trial position
+
+STATISTICAL METHODS:
+- Growth curve analysis / multilevel models (time within trial)
+- Time-series analysis for pupil data
+- Linear mixed models with trial number as predictor
+- Cluster-based permutation tests for timecourse comparisons
+- Segmented regression for detecting changepoints
+
+OUTPUT FILES TO GENERATE:
+- pupil_timecourse_by_trait.png
+- gaze_evolution_within_trial.png
+- learning_curve.png (accuracy/RT across trials)
+- fatigue_analysis.png
+- break_effect_analysis.png

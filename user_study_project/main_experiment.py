@@ -57,6 +57,8 @@ except ImportError:
     print("WARNING: opencv-python not available. Video playback may be limited.")
 
 # Local imports
+import csv
+
 import config
 from trial_manager import TrialManager
 from data_logger import DataLogger
@@ -352,7 +354,39 @@ class PairwisePerceptionExperiment:
         else:
             print("ERROR: No trials generated! Check that video files exist in:")
             print(f"  {os.path.abspath(config.VIDEO_BASE_PATH)}")
-    
+
+    def _load_aoi_data(self):
+        """
+        Load sub-face AOI definitions from the precomputed CSV.
+
+        Builds a lookup dict: aoi_data[video_filename] = [
+            {'aoi_name': 'left_eye', 'screen_x_min': ..., ...}, ...
+        ]
+        """
+        self.aoi_data = {}
+        aoi_path = getattr(config, 'AOI_CSV_PATH', None)
+        if aoi_path is None or not os.path.exists(aoi_path):
+            print(f"WARNING: AOI CSV not found at {aoi_path}. "
+                  "Sub-face AOIs will not be sent to EDF.")
+            return
+
+        with open(aoi_path, 'r') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                video_file = row['video_file']
+                if video_file not in self.aoi_data:
+                    self.aoi_data[video_file] = []
+                self.aoi_data[video_file].append({
+                    'aoi_name': row['aoi_name'],
+                    'screen_x_min': float(row['screen_x_min']),
+                    'screen_y_min': float(row['screen_y_min']),
+                    'screen_x_max': float(row['screen_x_max']),
+                    'screen_y_max': float(row['screen_y_max']),
+                })
+
+        print(f"Loaded sub-face AOIs for {len(self.aoi_data)} videos "
+              f"({sum(len(v) for v in self.aoi_data.values())} regions)")
+
     # ==========================================================================
     # DISPLAY METHODS
     # ==========================================================================
@@ -672,6 +706,12 @@ class PairwisePerceptionExperiment:
                     actual_video_w,
                     actual_video_h
                 )
+
+                # Define sub-face AOIs (eyes, nose, mouth, etc.) from precomputed CSV
+                if hasattr(self, 'aoi_data') and video_name in self.aoi_data:
+                    self.eyelink.define_subface_interest_areas(
+                        self.aoi_data[video_name]
+                    )
             
             # Write VFRAME message for Data Viewer video overlay
             if current_frame_timestamp != previous_frame_timestamp:
@@ -1234,6 +1274,7 @@ class PairwisePerceptionExperiment:
             self.create_stimuli()
             self.setup_data_logging()
             self.setup_trials()
+            self._load_aoi_data()
             self.setup_eyelink()
             
             # ----- CONSENT FORM -----

@@ -1,0 +1,441 @@
+EYE TRACKING ANALYTICAL METHODS GUIDE
+======================================
+Experiment: Personality Perception from Face Videos (Pairwise Comparison)
+Hardware: EyeLink 1000 Plus @ 1000 Hz
+Design: Sequential video presentation, 51 participants, 125 trials each
+
+========================================================================
+METHOD 1: CORE FIXATION METRICS (START HERE)
+========================================================================
+
+PURPOSE:
+  Basic measures of where and how long people look. These are the foundation
+  for all other analyses.
+
+METRICS:
+  - Total fixation count: number of fixations per video per trial
+  - Mean fixation duration (ms): average length of each fixation
+  - Total dwell time (ms): sum of all fixation durations on a region
+  - First fixation location: x,y coordinates of first fixation after video onset
+  - First fixation duration: how long the first fixation lasts
+
+WHAT THEY TELL YOU:
+  - Fixation count = visual search effort (more fixations = more searching)
+  - Fixation duration = processing depth (longer = deeper processing)
+  - Dwell time = overall attention allocation
+  - First fixation = what captures attention initially
+
+KEY COMPARISONS:
+  a) Chosen vs unchosen video (do people look more at what they pick?)
+  b) Correct vs incorrect trials (does gaze differ when right vs wrong?)
+  c) Across 5 personality traits (does gaze effort differ by trait?)
+
+STATISTICAL TESTS:
+  - Paired t-test: chosen vs unchosen video fixation metrics
+  - Repeated-measures ANOVA: fixation metrics across 5 traits
+  - Post-hoc: Tukey HSD or Bonferroni-corrected pairwise comparisons
+  - Effect sizes: Cohen's d for t-tests, partial eta-squared for ANOVA
+
+HOW TO COMPUTE:
+  1. Parse EDF -> extract fixation events (start_time, end_time, x, y, duration)
+  2. Filter fixations occurring during video playback (use TRIAL_START/VIDEO_ONSET messages)
+  3. Group by trial, compute count and mean duration
+  4. Merge with behavioral data (chosen video, accuracy, trait)
+
+
+========================================================================
+METHOD 2: AREA OF INTEREST (AOI) ANALYSIS — MOST IMPORTANT FOR YOUR STUDY
+========================================================================
+
+PURPOSE:
+  Determine which FACE REGIONS people look at when judging different
+  personality traits. This is the core contribution of your eye tracking study.
+
+AOI REGIONS TO DEFINE:
+  - Left eye region (including eyebrow)
+  - Right eye region (including eyebrow)
+  - Nose bridge
+  - Mouth region (lips + surrounding area)
+  - Forehead
+  - Chin / jaw line
+  - Left cheek
+  - Right cheek
+
+HOW TO DEFINE AOIs ON VIDEO:
+  Since your stimuli are face VIDEOS (not static images), the face moves
+  across frames. You need per-frame AOI mapping:
+
+  Step 1: Use MediaPipe Face Mesh (468 landmarks) or dlib (68 landmarks)
+          to detect face landmarks on each video frame
+  Step 2: Group landmarks into AOI regions:
+          - Eyes: landmarks 33-46 (dlib) or mesh indices for eye contour
+          - Nose: landmarks 27-35 (dlib)
+          - Mouth: landmarks 48-68 (dlib)
+          - etc.
+  Step 3: Create bounding polygons around each AOI per frame
+  Step 4: For each fixation, determine which frame was displayed at that time
+  Step 5: Check if fixation (x,y) falls within any AOI polygon for that frame
+
+  NOTE: If face movement is minimal (face-centered preprocessed videos),
+        you can simplify by using average landmark positions across all frames.
+
+KEY MEASURES PER AOI:
+  - Dwell time proportion: % of total viewing time spent in each AOI
+  - Entry count: how many times gaze enters each AOI (re-visits)
+  - First AOI visited: which region captures first fixation
+  - Mean fixation duration per AOI: processing depth per region
+
+HYPOTHESIZED TRAIT-SPECIFIC PATTERNS:
+  - Extraversion -> mouth region (smiling, expressiveness cues)
+  - Emotional Stability -> eye region (anxiety, calmness signals)
+  - Agreeableness -> overall face / mouth (warmth, friendliness cues)
+  - Conscientiousness -> may not have strong regional bias
+  - Openness -> may not have strong regional bias
+
+STATISTICAL TESTS:
+  - Two-way repeated-measures ANOVA: Trait (5) x AOI (6-8) on dwell proportion
+  - Main effect of AOI: which region gets most attention overall?
+  - Main effect of Trait: does total fixation effort differ by trait?
+  - Interaction (Trait x AOI): THE KEY TEST — do people look at different
+    regions for different traits?
+  - Post-hoc simple effects: for each trait, which AOI dominates?
+
+TOOLS:
+  - MediaPipe: pip install mediapipe (Google's face mesh, 468 landmarks)
+  - dlib: pip install dlib (68 landmarks, needs shape_predictor model file)
+  - shapely: pip install shapely (for point-in-polygon AOI hit testing)
+
+
+========================================================================
+METHOD 3: GAZE CASCADE / GAZE BIAS EFFECT
+========================================================================
+
+PURPOSE:
+  Test whether people look more at the face video they will eventually
+  choose as having "more" of the personality trait. This replicates the
+  classic gaze cascade effect (Shimojo et al., 2003) in personality context.
+
+THE EFFECT:
+  When choosing between two options, people progressively look more at the
+  option they will select. This gaze bias grows over time and is strongest
+  just before the decision.
+
+APPLICATION TO YOUR SEQUENTIAL DESIGN:
+  Your videos are shown sequentially (Video 1, then Video 2), not side-by-side.
+  So the classic "gaze cascade" (simultaneous comparison) doesn't directly apply.
+
+  Instead, measure:
+  a) Total fixation intensity during the chosen video vs unchosen video
+     (are people more "engaged" when watching the video they'll pick?)
+  b) Last video thought about: which video was being viewed just before response?
+  c) Fixation duration comparison: longer fixations during chosen video?
+  d) Pupil response: more dilation during chosen video?
+
+ANALYSES:
+  1. Compare total dwell time during Video 1 vs Video 2, split by choice
+  2. Compare mean fixation duration during chosen vs unchosen video
+  3. Logistic regression: can gaze metrics during each video predict choice?
+  4. If any "comparison screen" exists (decision phase): analyze gaze there
+
+STATISTICAL TESTS:
+  - Paired t-test: dwell time on chosen vs unchosen
+  - Logistic mixed-effects model: gaze metrics predicting choice (1 or 2)
+  - Within-subject correlation: gaze bias magnitude vs confidence
+
+EXPECTED FINDING:
+  People should show more intense/longer fixations during the video they
+  ultimately choose as exhibiting the trait more strongly.
+
+
+========================================================================
+METHOD 4: PUPIL DILATION ANALYSIS
+========================================================================
+
+PURPOSE:
+  Pupil size reflects cognitive effort, arousal, and decision difficulty.
+  EyeLink 1000 Plus records pupil size at 1000 Hz — excellent temporal resolution.
+
+PREPROCESSING PIPELINE:
+  Step 1: Extract raw pupil data from EDF (timestamp, pupil_size)
+  Step 2: Blink detection and removal
+          - EyeLink marks blinks automatically
+          - Remove samples during blinks (pupil = 0 or marked)
+          - Extend removal window: 50ms before and 100ms after each blink
+  Step 3: Interpolation
+          - Linear interpolation across blink gaps
+          - Only interpolate gaps < 500ms; discard trials with longer gaps
+  Step 4: Baseline correction
+          - Baseline period: last 500ms of pre-trial fixation cross
+          - Subtract mean baseline from all subsequent samples
+          - Result: relative pupil change from baseline
+  Step 5: Low-pass filter
+          - 4th order Butterworth filter, 4-10 Hz cutoff
+          - Removes high-frequency noise
+  Step 6: Downsample
+          - From 1000 Hz to 50-100 Hz for analysis (reduces data volume)
+
+KEY COMPARISONS:
+  a) Correct vs incorrect trials:
+     - Harder decisions (incorrect) should produce larger pupil dilation
+     - Compare mean pupil during video viewing
+
+  b) Across 5 traits:
+     - Which trait causes most cognitive effort?
+     - Hypothesis: traits harder to perceive -> larger pupil
+
+  c) High confidence vs low confidence:
+     - High confidence -> less cognitive effort -> smaller pupil?
+     - Or high confidence -> strong engagement -> larger pupil?
+
+  d) Timecourse analysis:
+     - Plot average pupil trace aligned to video onset
+     - When does peak dilation occur within each ~16s video?
+     - Compare timecourses between conditions
+
+STATISTICAL TESTS:
+  - Paired t-test: mean pupil for correct vs incorrect
+  - Repeated-measures ANOVA: mean pupil across 5 traits
+  - Cluster-based permutation test: timecourse comparison
+    (tests at which TIME POINTS conditions differ significantly,
+     correcting for multiple comparisons across time)
+  - Correlation: mean pupil vs response time (both reflect difficulty)
+
+TOOLS:
+  - scipy.signal: butterworth filter, filtering
+  - numpy: interpolation, baseline correction
+  - mne-python (optional): cluster-based permutation tests on timecourses
+
+
+========================================================================
+METHOD 5: SCANPATH ANALYSIS
+========================================================================
+
+PURPOSE:
+  Analyze the SEQUENCE of fixations, not just their locations.
+  Do people scan faces in a consistent order when judging a specific trait?
+
+METHODS:
+
+  a) ScanMatch (Cristino et al., 2010):
+     - Converts scanpath to a string (each AOI = a letter)
+     - Example: "E E M N E M" (eyes, eyes, mouth, nose, eyes, mouth)
+     - Computes string-edit distance (Needleman-Wunsch) between scanpaths
+     - Lower distance = more similar scanpaths
+
+  b) MultiMatch (Dewhurst et al., 2012):
+     - Compares scanpaths on 5 dimensions simultaneously:
+       1. Shape (overall path shape)
+       2. Direction (angle between consecutive fixations)
+       3. Length (saccade amplitudes)
+       4. Position (absolute fixation locations)
+       5. Duration (fixation durations)
+     - Returns similarity score for each dimension
+
+  c) Recurrence Quantification Analysis (RQA):
+     - Measures how often gaze returns to previously visited locations
+     - Recurrence rate: proportion of fixations that revisit old locations
+     - Determinism: how predictable is the gaze sequence?
+     - Laminarity: does gaze get "stuck" in certain regions?
+
+USE FOR YOUR STUDY:
+  1. Within-participant consistency: does the same person scan similarly
+     across different videos of the same trait?
+  2. Between-participant consistency: do different people scan similarly
+     when judging the same trait?
+  3. Trait-specific scanpaths: are scanpath patterns different for
+     Extraversion vs Conscientiousness?
+
+STATISTICAL TESTS:
+  - Permutation test on scanpath similarity (compare within-trait vs
+    between-trait similarity)
+  - ANOVA on scanpath similarity scores across traits
+  - Correlation: scanpath consistency vs accuracy
+
+
+========================================================================
+METHOD 6: GAZE ENTROPY
+========================================================================
+
+PURPOSE:
+  Quantify how spread out or focused the gaze distribution is.
+  Entropy = measure of uncertainty/randomness in gaze allocation.
+
+TYPES:
+
+  a) Stationary (spatial) entropy:
+     - Divide screen into grid cells or use AOI regions
+     - Calculate proportion of fixations in each cell/AOI
+     - Shannon entropy: H = -sum(p_i * log2(p_i))
+     - Range: 0 (all fixations in one spot) to log2(N) (perfectly uniform)
+
+  b) Gaze transition entropy:
+     - Based on transition probabilities between AOIs
+     - How predictable is the next fixation location?
+     - Low transition entropy = highly predictable scan pattern
+     - High transition entropy = random/exploratory scanning
+
+INTERPRETATION:
+  - Low entropy = focused, efficient viewing (viewer knows where to look)
+  - High entropy = exploratory, uncertain viewing (searching for information)
+  - Correct trials may have lower entropy (efficient strategy)
+  - Easy traits may have lower entropy (diagnostic info is obvious)
+
+HYPOTHESES:
+  - Extraversion (most perceptible) -> lowest entropy (focus on mouth/smile)
+  - Openness/Conscientiousness (less perceptible) -> higher entropy
+  - Correct trials -> lower entropy than incorrect trials
+  - High confidence -> lower entropy than low confidence
+
+STATISTICAL TESTS:
+  - One-way repeated-measures ANOVA: entropy across 5 traits
+  - Paired t-test: entropy for correct vs incorrect
+  - Correlation: entropy vs accuracy, entropy vs confidence
+  - Mixed-effects model: entropy ~ trait * accuracy + (1|participant)
+
+
+========================================================================
+METHOD 7: TRANSITION MATRIX ANALYSIS
+========================================================================
+
+PURPOSE:
+  Build probability matrices of gaze transitions between face AOIs.
+  Reveals the "flow" of visual attention across the face.
+
+HOW TO BUILD:
+  1. Label each fixation with its AOI (eyes, nose, mouth, etc.)
+  2. Create sequences: E -> M -> N -> E -> E -> M ...
+  3. Count transitions: how often does gaze go from region A to region B?
+  4. Normalize rows to get transition probabilities
+
+EXAMPLE MATRIX (Extraversion trials):
+           Eyes   Nose   Mouth  Forehead  Other
+  Eyes      --    0.15   0.45    0.10     0.30
+  Nose     0.35    --    0.40    0.05     0.20
+  Mouth    0.50   0.15    --     0.05     0.30
+  Forehead 0.40   0.20   0.30    --       0.10
+
+  Reading: from Eyes, 45% of transitions go to Mouth (strong link)
+
+ANALYSES:
+  1. Build one transition matrix per trait (averaged across participants)
+  2. Compare matrices: do transition patterns differ by trait?
+  3. Identify dominant transitions for each trait
+  4. Network visualization: nodes = AOIs, edges = transition probabilities
+  5. Compare: correct vs incorrect trial transition matrices
+
+STATISTICAL TESTS:
+  - Chi-square test: are transition frequencies different from uniform?
+  - Markov chain analysis: is the gaze sequence Markovian (memoryless)?
+  - Permutation tests: compare transition matrices between traits
+  - Graph theory metrics: identify hub AOIs (most connected regions)
+
+
+========================================================================
+METHOD 8: MIXED-EFFECTS MODELS (YOUR MAIN STATISTICAL FRAMEWORK)
+========================================================================
+
+PURPOSE:
+  With 51 participants x 125 trials, you have a nested data structure.
+  Mixed-effects models properly account for:
+  - Repeated measures within participants
+  - Individual differences between participants
+  - Item (video pair) variability
+
+MODEL STRUCTURE:
+  Fixed effects: what you manipulate/measure
+  Random effects: sources of variability you want to control for
+
+EXAMPLE MODELS FOR YOUR STUDY:
+
+  Model 1 - Fixation duration by trait:
+    fixation_duration ~ trait + (1 | participant) + (1 | video_pair)
+
+  Model 2 - Gaze predicting accuracy:
+    accuracy ~ dwell_time_chosen + fixation_count + trait + (1 | participant)
+
+  Model 3 - AOI analysis:
+    dwell_proportion ~ trait * aoi_region + (1 + trait | participant)
+
+  Model 4 - Pupil and confidence:
+    pupil_dilation ~ trait * confidence + (1 | participant) + (1 | video_pair)
+
+  Model 5 - Full model:
+    accuracy ~ trait + fixation_duration + gaze_entropy + pupil_dilation +
+               confidence + (1 + trait | participant) + (1 | video_pair)
+
+RANDOM EFFECTS EXPLAINED:
+  - (1 | participant): each person has their own baseline (random intercept)
+  - (1 + trait | participant): each person has their own baseline AND their
+    own sensitivity to different traits (random intercept + slope)
+  - (1 | video_pair): each video pair has its own difficulty level
+
+TOOLS:
+  Python: statsmodels.formula.api.mixedlm()
+  R (more powerful): lme4::lmer() or lmerTest::lmer()
+  Python alternative: pymer4 (Python wrapper for R's lme4)
+
+WHY NOT JUST USE ANOVA:
+  - ANOVA requires aggregating data (losing trial-level information)
+  - Mixed models use ALL individual trials
+  - Mixed models handle missing data and unbalanced designs
+  - Mixed models estimate participant AND item variability simultaneously
+
+
+========================================================================
+RECOMMENDED ANALYSIS ORDER
+========================================================================
+
+PHASE 1 - Data Preparation:
+  1. Convert EDF files to readable format (edf2asc or pyedfread)
+  2. Run face landmark detection on all 50 stimulus videos (MediaPipe)
+  3. Define AOI regions from landmarks
+  4. Merge eye tracking data with behavioral data
+  5. Quality checks: data loss, calibration accuracy, outlier removal
+
+PHASE 2 - Core Analyses (must-have for your thesis):
+  6. Fixation metrics by trait and accuracy (Method 1)
+  7. AOI dwell time analysis — trait x AOI interaction (Method 2)
+  8. Gaze cascade / chosen vs unchosen (Method 3)
+  9. Mixed-effects models for all above (Method 8)
+
+PHASE 3 - Advanced Analyses (strengthens your contribution):
+  10. Pupil dilation analysis (Method 4)
+  11. Gaze entropy by trait (Method 6)
+  12. Transition matrices (Method 7)
+
+PHASE 4 - Exploratory (if time permits):
+  13. Scanpath analysis (Method 5)
+  14. Individual difference clustering
+  15. Temporal dynamics within trials
+
+
+========================================================================
+TOOLS SUMMARY
+========================================================================
+
+EDF Parsing:
+  - pyedfread: pip install pyedfread (reads EDF directly in Python)
+  - edf2asc: SR Research tool (converts EDF to ASCII text)
+  - edfreader: pip install edfreader
+
+Face Landmarks (for AOI):
+  - mediapipe: pip install mediapipe (468 landmarks, fast, no GPU needed)
+  - dlib: pip install dlib (68 landmarks, needs model file download)
+
+Statistics:
+  - scipy.stats: t-tests, ANOVA, correlations
+  - statsmodels: mixed-effects models, regression
+  - pingouin: pip install pingouin (user-friendly ANOVA, effect sizes)
+  - pymer4: pip install pymer4 (Python wrapper for R's lme4)
+
+Visualization:
+  - matplotlib + seaborn: standard plots
+  - plotly: interactive plots (good for heatmaps)
+
+Scanpath:
+  - multimatch-gaze: pip install multimatch-gaze
+  - custom ScanMatch implementation (Needleman-Wunsch string alignment)
+
+Pupil Processing:
+  - scipy.signal: butterworth filtering
+  - mne-python: cluster-based permutation tests

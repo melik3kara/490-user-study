@@ -1,0 +1,60 @@
+03 - CONFIDENCE ANALYSIS
+========================
+
+PURPOSE: Investigate the relationship between participants' confidence in their
+personality judgments and their actual accuracy. This tests metacognitive awareness.
+
+DATA NEEDED:
+- participant_*.csv (columns: confidence_rating, response_correct, trait, response_time)
+
+ANALYSES TO RUN:
+----------------
+
+1. CONFIDENCE DISTRIBUTION
+   - Overall distribution of confidence ratings (1-5)
+   - Mean confidence per trait
+   - Are some traits judged with more confidence than others?
+   - Visualization: histogram of confidence ratings, grouped bar by trait
+
+2. CONFIDENCE-ACCURACY CORRELATION
+   - Point-biserial correlation: confidence (1-5) vs accuracy (0/1) per trial
+   - Gamma correlation (ordinal): better for ordinal confidence scales
+   - Per-participant: each person's confidence-accuracy relationship
+   - Are confident judgments actually more accurate? (calibration)
+
+3. CONFIDENCE CALIBRATION CURVE
+   - Group trials by confidence level (1, 2, 3, 4, 5)
+   - Calculate actual accuracy at each confidence level
+   - Perfect calibration = diagonal line
+   - Overconfidence = accuracy below confidence level
+   - Visualization: calibration plot (confidence vs actual accuracy)
+
+4. CONFIDENCE BY TRAIT
+   - Mean confidence for correct vs incorrect trials, per trait
+   - 2-way ANOVA: Trait x Correctness on confidence
+   - Which traits produce highest/lowest confidence?
+   - Does confidence predict accuracy equally well for all traits?
+
+5. CONFIDENCE AND RESPONSE TIME
+   - Correlation between confidence and RT
+   - Are faster responses associated with higher confidence?
+   - Do high-confidence correct trials have different RT than high-confidence incorrect?
+
+6. SIGNAL DETECTION ANALYSIS (ADVANCED)
+   - Treat confidence as a continuous measure of decision strength
+   - Type 2 ROC analysis: how well does confidence discriminate correct from incorrect
+   - Meta-d' (metacognitive sensitivity): formal measure of metacognitive ability
+   - Compare meta-d' across traits
+
+STATISTICAL METHODS:
+- Point-biserial / Gamma correlation
+- Repeated-measures ANOVA (trait x correctness on confidence)
+- Logistic regression: confidence predicting accuracy
+- Signal detection theory (Type 2 SDT)
+
+OUTPUT FILES TO GENERATE:
+- confidence_distribution.png
+- calibration_curve.png
+- confidence_by_trait_and_accuracy.png
+- confidence_rt_scatter.png
+- metacognitive_sensitivity.csv

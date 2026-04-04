@@ -1,0 +1,53 @@
+06 - VIDEO-LEVEL ANALYSIS
+==========================
+
+PURPOSE: Analyze performance at the individual video/pair level to understand
+which specific stimuli are easy or hard to judge and why.
+
+DATA NEEDED:
+- Behavioral data with video identifiers (video_first, video_second columns)
+- Accuracy and RT per trial
+
+ANALYSES TO RUN:
+----------------
+
+1. VIDEO PAIR DIFFICULTY
+   - For each of the 125 unique video pairs (25 per trait):
+     Calculate % of participants who answered correctly
+   - Identify easiest pairs (>80% accuracy) and hardest pairs (<50% accuracy)
+   - Are some high-low pairs more discriminable than others?
+
+2. INDIVIDUAL VIDEO "STRENGTH"
+   - For each of the 50 videos: how often is it correctly identified?
+   - High videos: how often chosen as "more [trait]"? (should be high)
+   - Low videos: how often NOT chosen? (should be high)
+   - Calculate "video discriminability" score
+   - Are some high-trait videos weak exemplars? Some low-trait videos ambiguous?
+
+3. VIDEO PRESENTATION ORDER EFFECTS
+   - Compare accuracy when high video is shown first vs second
+   - Primacy effect: are first-shown videos chosen more often?
+   - Recency effect: are second-shown videos chosen more often?
+   - This tests for bias in the sequential presentation design
+
+4. VIDEO-LEVEL GAZE ANALYSIS
+   - Which videos attract longer fixations?
+   - Pupil dilation differences across videos
+   - Do "easy" videos (high accuracy) produce different gaze patterns?
+
+5. STIMULUS VALIDATION
+   - Are the high/low labels from the dataset valid?
+   - If accuracy is near chance for some pairs, the stimuli may not differ enough
+   - Report item-level statistics for stimulus quality assessment
+
+STATISTICAL METHODS:
+- Descriptive statistics per video/pair
+- Binomial test per pair (accuracy vs 50%)
+- Paired t-test (first vs second position accuracy)
+- Item-response theory (IRT) for video difficulty estimation (advanced)
+
+OUTPUT FILES TO GENERATE:
+- video_pair_accuracy.csv
+- video_discriminability.csv
+- presentation_order_effect.png
+- hardest_easiest_pairs.png

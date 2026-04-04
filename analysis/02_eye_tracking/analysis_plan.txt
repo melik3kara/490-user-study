@@ -1,0 +1,70 @@
+02 - EYE TRACKING ANALYSIS
+==========================
+
+PURPOSE: Analyze gaze behavior during personality perception trials.
+Understand WHERE people look and HOW they look when judging personality.
+
+DATA NEEDED:
+- EDF files from EyeLink (converted to ASC or parsed with pylink)
+- Fixation reports, saccade reports, sample reports
+- Interest area definitions (video regions on screen)
+
+PREREQUISITE - EDF DATA EXTRACTION:
+- Use SR Research Data Viewer to export fixation/saccade reports
+- OR use pyedfread / edf2asc tool to convert EDF -> ASCII
+- Key columns needed: timestamp, x_position, y_position, pupil_size,
+  fixation_duration, saccade_amplitude, event_type
+
+ANALYSES TO RUN:
+----------------
+
+1. FIXATION METRICS (per trial)
+   - Total fixation count during each video
+   - Mean fixation duration (ms)
+   - Total dwell time on each video
+   - First fixation location and duration
+   - Last fixation before response
+   - Compare: fixations on chosen vs unchosen video
+
+2. SACCADE METRICS
+   - Saccade count per trial
+   - Mean saccade amplitude (degrees)
+   - Saccade velocity profiles
+   - Number of regressive saccades (back to previously viewed regions)
+
+3. PUPIL SIZE ANALYSIS
+   - Mean pupil size during video viewing
+   - Pupil dilation changes: baseline vs during video
+   - Pupil size difference between correct and incorrect trials
+   - Pupil size as indicator of cognitive effort/difficulty
+   - NOTE: Pupil data needs baseline correction (subtract pre-trial fixation)
+
+4. AREA OF INTEREST (AOI) ANALYSIS
+   - Define AOIs: eyes, nose, mouth, forehead, chin regions of the face
+   - Dwell time per AOI for each trait
+   - Do people look at different face regions for different traits?
+   - Example hypothesis: mouth region more important for Extraversion/Agreeableness
+   - NOTE: AOIs need to be defined on the video frames (face landmark detection)
+
+5. GAZE-CHOICE RELATIONSHIP
+   - Total looking time on Video 1 vs Video 2
+   - "Gaze cascade effect": do people look more at the video they eventually choose?
+   - Last fixated video before response - does it predict choice?
+
+6. SCANPATH ANALYSIS
+   - Sequence of fixations during video viewing
+   - Scanpath similarity between participants (using ScanMatch or MultiMatch)
+   - Do people follow similar viewing patterns for same videos?
+
+STATISTICAL METHODS:
+- Paired t-tests (chosen vs unchosen video metrics)
+- Mixed-effects models (participant as random effect, trait as fixed effect)
+- Correlation: gaze metrics vs accuracy/confidence
+- Linear mixed models using statsmodels or pingouin
+
+OUTPUT FILES TO GENERATE:
+- fixation_summary_by_trait.csv
+- gaze_heatmaps/ (per trait, per video)
+- pupil_timecourse.png
+- aoi_dwell_time_by_trait.png
+- scanpath_examples.png

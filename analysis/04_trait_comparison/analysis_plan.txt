@@ -1,0 +1,63 @@
+04 - TRAIT COMPARISON ANALYSIS
+===============================
+
+PURPOSE: Compare perception across the 5 Big Five traits to determine which
+personality dimensions are most/least perceptible from face videos.
+
+DATA NEEDED:
+- Behavioral data (accuracy, RT, confidence per trait)
+- Eye tracking data (fixation metrics per trait)
+
+ANALYSES TO RUN:
+----------------
+
+1. TRAIT PERCEPTIBILITY RANKING
+   - Rank all 5 traits by mean accuracy: Extraversion, Agreeableness,
+     Conscientiousness, Emotional Stability, Openness
+   - Repeated-measures ANOVA: does accuracy differ across traits?
+   - Post-hoc pairwise comparisons (Tukey HSD or Bonferroni)
+   - Expected: Extraversion likely most perceptible (literature suggests this)
+
+2. TRAIT DIFFICULTY PROFILE
+   - For each trait, create a "difficulty profile":
+     * Accuracy (higher = easier)
+     * Response time (lower = easier)
+     * Confidence (higher = easier)
+     * Fixation count (lower = easier, less visual search needed)
+   - Radar/spider chart showing all metrics per trait
+
+3. TRAIT-SPECIFIC GAZE PATTERNS
+   - Do people look at different face regions for different traits?
+   - Hypothesis: Extraversion judgments focus on mouth (smile)
+   - Hypothesis: Emotional Stability judgments focus on eyes
+   - Hypothesis: Agreeableness judgments focus on overall face expression
+   - Compare AOI dwell times across traits (trait x AOI ANOVA)
+
+4. TRAIT CONFUSION ANALYSIS
+   - When participants are wrong, is there a pattern?
+   - Do certain high/low video pairs cause more confusion?
+   - Are errors random or systematic (e.g., always choosing more attractive face)?
+
+5. EFFECT SIZE COMPARISON
+   - Cohen's d for each trait (accuracy vs chance)
+   - Which traits show strongest behavioral signal?
+   - Forest plot of effect sizes across traits
+
+6. INTER-TRAIT CORRELATIONS
+   - Per participant: does being good at one trait predict being good at another?
+   - Correlation matrix of per-participant accuracy across traits
+   - Are there "super-perceivers" who are good at all traits?
+
+STATISTICAL METHODS:
+- One-way repeated-measures ANOVA (5 traits)
+- Post-hoc pairwise t-tests with correction
+- Two-way ANOVA (trait x AOI)
+- Pearson correlations (inter-trait accuracy)
+- Effect size: Cohen's d, partial eta-squared
+
+OUTPUT FILES TO GENERATE:
+- trait_ranking.csv
+- trait_accuracy_comparison.png
+- trait_difficulty_radar.png
+- trait_gaze_patterns.png
+- inter_trait_correlation_matrix.png

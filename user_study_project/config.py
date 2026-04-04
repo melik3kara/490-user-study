@@ -5,6 +5,8 @@ This file contains all configurable parameters for the experiment.
 Modify these settings as needed before running the experiment.
 """
 
+import os
+
 # ==============================================================================
 # EXPERIMENT SETTINGS
 # ==============================================================================
@@ -163,6 +165,13 @@ INTEREST_AREA_PADDING = 20  # pixels of padding around face target
 FACE_BOX_SIZE = 200    # Fixed bounding box size used in blur.py
 FACE_ZOOM_FACTOR = 2   # Zoom factor used in blur.py
 # Effective face region in the preprocessed video = 200 * 2 = 400 pixels
+
+# Sub-face AOI definitions (extracted by analysis/02_eye_tracking/step1_extract_face_aois.py)
+# This CSV contains average bounding boxes for eyes, nose, mouth, etc. per video.
+AOI_CSV_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "analysis", "02_eye_tracking", "aoi_data", "average_aois_all_videos.csv"
+)
 
 # ==============================================================================
 # TRIAL STRUCTURE SETTINGS

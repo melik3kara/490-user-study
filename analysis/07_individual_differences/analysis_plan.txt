@@ -1,0 +1,60 @@
+07 - INDIVIDUAL DIFFERENCES ANALYSIS
+=====================================
+
+PURPOSE: Examine participant-level variation. Are some people better at
+perceiving personality? Do different people use different visual strategies?
+
+DATA NEEDED:
+- All behavioral data aggregated per participant
+- Eye tracking data aggregated per participant
+
+ANALYSES TO RUN:
+----------------
+
+1. PARTICIPANT ACCURACY DISTRIBUTION
+   - Distribution of per-participant mean accuracy (across all 125 trials)
+   - Range: best vs worst performer
+   - Are there "super-perceivers" (significantly above chance on all traits)?
+   - Are there participants performing at chance (potential non-engagers)?
+
+2. PARTICIPANT GAZE STRATEGY CLUSTERS
+   - Cluster participants based on their gaze patterns:
+     * Eye-focused viewers (spend most time on eyes)
+     * Mouth-focused viewers
+     * Holistic viewers (distributed across face)
+   - K-means or hierarchical clustering on AOI dwell proportions
+   - Do different gaze strategies predict different accuracy levels?
+
+3. CONSISTENCY ACROSS TRAITS
+   - Per participant: accuracy profile across 5 traits
+   - Are some people good at ALL traits or specialized?
+   - ICC (intraclass correlation) for within-person consistency
+   - Profile analysis: cluster participants by their trait accuracy pattern
+
+4. RESPONSE BIAS
+   - Does any participant always choose Video 1 or Video 2?
+   - Position bias: proportion of "first" vs "second" responses
+   - Extreme bias (>70% one option) may indicate non-engagement
+   - Flag these participants for potential exclusion
+
+5. OUTLIER DETECTION
+   - Identify participants with:
+     * Very fast RT (<500ms mean, suggesting random clicking)
+     * Very slow RT (>10s mean, suggesting distraction)
+     * Near-chance accuracy across all traits
+     * Poor eye tracking data quality (>30% data loss)
+   - Decision: exclude or analyze separately
+
+STATISTICAL METHODS:
+- Descriptive statistics per participant
+- K-means / hierarchical clustering
+- ICC (intraclass correlation coefficient)
+- Binomial test (response bias detection)
+- Mixed-effects models with participant as random intercept
+
+OUTPUT FILES TO GENERATE:
+- participant_summary.csv
+- accuracy_distribution.png
+- gaze_strategy_clusters.png
+- participant_trait_profiles.png
+- exclusion_criteria_report.txt

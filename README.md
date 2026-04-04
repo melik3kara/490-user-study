@@ -71,8 +71,7 @@ run_experiment.bat
 2. **Welcome Screen** - Press SPACE to continue
 3. **Instructions** - Read and press SPACE
 4. **Practice Trial** (1 trial) - Familiarize with the task
-5. **Main Experiment** - 125 trials (5 traits × 25 pairs each)
-6. **Breaks** - Every 20 trials
+5. **Main Experiment** - 25 trials (5 traits × 5 pairs each low and high)
 7. **End Screen** - Thank you message
 
 ### Controls

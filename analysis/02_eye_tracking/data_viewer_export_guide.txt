@@ -1,0 +1,303 @@
+DATA VIEWER EXPORT GUIDE
+========================
+How to export EyeLink data from SR Research Data Viewer for Python analysis.
+
+You need to export 3 report types: Fixation Report, Saccade Report, and Sample Report.
+Each report becomes a CSV/TSV file you can load with pandas.
+
+
+========================================================================
+STEP 0: LOAD YOUR DATA INTO DATA VIEWER
+========================================================================
+
+1. Open SR Research Data Viewer
+2. File -> Import Data -> Multiple EyeLink Data Files
+3. Select all your .edf files from: user_study_project/eyelink_data/
+4. Data Viewer will create a "viewing session" with all participants
+
+NOTE: Data Viewer needs .avi videos (not .mp4) for overlay.
+      You already have convert_to_avi.py for this.
+
+
+========================================================================
+STEP 1: DEFINE INTEREST AREAS (OPTIONAL BUT RECOMMENDED)
+========================================================================
+
+If you want AOI-based exports directly from Data Viewer:
+
+Option A - Manual (simple):
+  1. In the trial view, right-click -> Insert Interest Area
+  2. Draw rectangles around face regions (eyes, nose, mouth)
+  3. Name each IA: "LEFT_EYE", "RIGHT_EYE", "NOSE", "MOUTH", etc.
+  4. Save as Interest Area Set (.ias file)
+  5. Apply to all trials: Edit -> Preferences -> Interest Areas
+
+Option B - Dynamic (better for video):
+  1. Create Interest Area files (.ias) per frame using face landmarks
+  2. You'll do this in Python later with MediaPipe — skip for now
+  3. Import dynamic IAs: Edit -> Interest Areas -> Load Interest Area Set
+
+Option C - Skip for now:
+  Just export raw fixation coordinates and do AOI mapping in Python later.
+  THIS IS THE RECOMMENDED APPROACH — more flexible.
+
+
+========================================================================
+STEP 2: EXPORT FIXATION REPORT (MOST IMPORTANT)
+========================================================================
+
+This gives you one row per fixation event.
+
+Menu: Analysis -> Reports -> Fixation Report
+
+COLUMNS TO SELECT (check these in the Variable Selection dialog):
+
+  Trial-level variables:
+  [x] RECORDING_SESSION_LABEL    (participant ID)
+  [x] TRIAL_INDEX                (trial number)
+  [x] TRIAL_LABEL                (trial identifier from your experiment)
+
+  Fixation variables:
+  [x] CURRENT_FIX_INDEX          (fixation number within trial)
+  [x] CURRENT_FIX_START          (fixation start time, ms)
+  [x] CURRENT_FIX_END            (fixation end time, ms)
+  [x] CURRENT_FIX_DURATION       (fixation duration, ms)
+  [x] CURRENT_FIX_X              (x coordinate, pixels)
+  [x] CURRENT_FIX_Y              (y coordinate, pixels)
+  [x] CURRENT_FIX_PUPIL          (pupil size during fixation)
+  [x] CURRENT_FIX_BLINK_AROUND   (was there a blink near this fixation?)
+
+  Interest Area variables (if you defined IAs):
+  [x] CURRENT_FIX_INTEREST_AREA_INDEX
+  [x] CURRENT_FIX_INTEREST_AREA_LABEL
+  [x] CURRENT_FIX_INTEREST_AREA_DWELL_TIME
+
+  Previous/Next fixation (for transition analysis):
+  [x] PREVIOUS_FIX_INTEREST_AREA_LABEL
+  [x] NEXT_FIX_INTEREST_AREA_LABEL
+
+  Trial messages (your experiment events):
+  [x] TRIAL_START_TIME
+  [x] IP_START_TIME               (interest period start)
+  [x] IP_END_TIME                 (interest period end)
+  [x] IP_LABEL                    (interest period label)
+
+Export settings:
+  - Output: Tab-delimited (.txt) or CSV
+  - Include header row: YES
+  - Missing values: "." (dot)
+  - Save as: fixation_report.csv
+
+MENU PATH:
+  Analysis -> Reports -> Fixation Report -> [select variables] -> Save
+
+
+========================================================================
+STEP 3: EXPORT SACCADE REPORT
+========================================================================
+
+One row per saccade event.
+
+Menu: Analysis -> Reports -> Saccade Report
+
+COLUMNS TO SELECT:
+
+  [x] RECORDING_SESSION_LABEL
+  [x] TRIAL_INDEX
+  [x] CURRENT_SAC_INDEX          (saccade number)
+  [x] CURRENT_SAC_START_TIME
+  [x] CURRENT_SAC_END_TIME
+  [x] CURRENT_SAC_DURATION       (saccade duration, ms)
+  [x] CURRENT_SAC_START_X        (launch x position)
+  [x] CURRENT_SAC_START_Y        (launch y position)
+  [x] CURRENT_SAC_END_X          (landing x position)
+  [x] CURRENT_SAC_END_Y          (landing y position)
+  [x] CURRENT_SAC_AMPLITUDE      (saccade amplitude, degrees)
+  [x] CURRENT_SAC_ANGLE          (saccade direction, degrees)
+  [x] CURRENT_SAC_AVG_VELOCITY   (average velocity, deg/s)
+  [x] CURRENT_SAC_PEAK_VELOCITY  (peak velocity, deg/s)
+  [x] CURRENT_SAC_CONTAINS_BLINK (was there a blink during saccade?)
+
+  Interest Area (if defined):
+  [x] CURRENT_SAC_START_INTEREST_AREA_LABEL
+  [x] CURRENT_SAC_END_INTEREST_AREA_LABEL
+
+Save as: saccade_report.csv
+
+
+========================================================================
+STEP 4: EXPORT SAMPLE REPORT (FOR PUPIL ANALYSIS)
+========================================================================
+
+One row per sample (1000 rows per second at 1000 Hz).
+WARNING: This file will be VERY LARGE. ~1000 samples/sec x 35 sec/trial x 125 trials x 51 participants.
+
+Menu: Analysis -> Reports -> Sample Report
+
+COLUMNS TO SELECT:
+
+  [x] RECORDING_SESSION_LABEL
+  [x] TRIAL_INDEX
+  [x] TIMESTAMP                  (time in ms)
+  [x] LEFT_GAZE_X               (left eye x position)
+  [x] LEFT_GAZE_Y               (left eye y position)
+  [x] LEFT_PUPIL_SIZE           (left eye pupil)
+  [x] RIGHT_GAZE_X              (right eye x, if binocular)
+  [x] RIGHT_GAZE_Y              (right eye y, if binocular)
+  [x] RIGHT_PUPIL_SIZE          (right eye pupil, if binocular)
+  [x] LEFT_IN_BLINK             (1 if in blink, 0 otherwise)
+  [x] LEFT_IN_SACCADE           (1 if in saccade, 0 otherwise)
+  [x] IP_LABEL                  (interest period label)
+
+TIP: To reduce file size, export only specific interest periods:
+  - Filter by IP_LABEL = "VIDEO1" or "VIDEO2" (if you defined interest periods)
+  - Or export at lower rate: Edit -> Preferences -> Sample Rate -> every 2nd/5th sample
+
+Save as: sample_report.csv
+
+NOTE: If file is too large, export per participant instead of all at once.
+
+
+========================================================================
+STEP 5: EXPORT INTEREST AREA REPORT (IF YOU DEFINED IAs)
+========================================================================
+
+Pre-aggregated AOI statistics per trial. Saves you from computing in Python.
+
+Menu: Analysis -> Reports -> Interest Area Report
+
+COLUMNS TO SELECT:
+
+  [x] RECORDING_SESSION_LABEL
+  [x] TRIAL_INDEX
+  [x] IA_LABEL                  (interest area name)
+  [x] IA_DWELL_TIME             (total time fixating this AOI, ms)
+  [x] IA_FIXATION_COUNT         (number of fixations in this AOI)
+  [x] IA_FIRST_FIXATION_TIME    (time of first fixation in this AOI)
+  [x] IA_FIRST_FIXATION_DURATION
+  [x] IA_AVERAGE_FIX_DURATION   (mean fixation duration in this AOI)
+  [x] IA_FIRST_RUN_DWELL_TIME   (first pass dwell time)
+  [x] IA_SECOND_RUN_DWELL_TIME  (second pass dwell time — re-reading)
+
+Save as: interest_area_report.csv
+
+
+========================================================================
+STEP 6: EXPORT MESSAGE REPORT (YOUR EXPERIMENT EVENTS)
+========================================================================
+
+Contains the messages your experiment sent to EyeLink (from eyelink_utils.py).
+
+Menu: Analysis -> Reports -> Message Report
+
+This extracts messages like:
+  - TRIAL_START, TRIAL_END
+  - VIDEO_ONSET, VIDEO_OFFSET
+  - FIXATION_ONSET
+  - RESPONSE
+
+COLUMNS TO SELECT:
+  [x] RECORDING_SESSION_LABEL
+  [x] TRIAL_INDEX
+  [x] CURRENT_MSG_TIME          (timestamp of message)
+  [x] CURRENT_MSG_TEXT          (message content)
+  [x] CURRENT_MSG_LABEL
+
+Save as: message_report.csv
+
+USE: Align eye tracking events with your experiment timeline.
+
+
+========================================================================
+RECOMMENDED FILE ORGANIZATION
+========================================================================
+
+Save all exports here:
+
+  analysis/
+  └── 02_eye_tracking/
+      └── exports/
+          ├── fixation_report.csv      (one row per fixation)
+          ├── saccade_report.csv       (one row per saccade)
+          ├── sample_report.csv        (one row per 1ms sample — LARGE)
+          ├── interest_area_report.csv (one row per AOI per trial)
+          └── message_report.csv       (experiment event timestamps)
+
+
+========================================================================
+LOADING IN PYTHON
+========================================================================
+
+import pandas as pd
+
+# Load fixation report
+fix = pd.read_csv('exports/fixation_report.csv', sep='\t')
+# or sep=',' if you exported as CSV
+
+# Basic check
+print(f"Total fixations: {len(fix)}")
+print(f"Participants: {fix['RECORDING_SESSION_LABEL'].nunique()}")
+print(f"Columns: {fix.columns.tolist()}")
+
+# Filter: only fixations during video playback
+# Use message timestamps to define video periods
+msg = pd.read_csv('exports/message_report.csv', sep='\t')
+video_onsets = msg[msg['CURRENT_MSG_TEXT'].str.contains('VIDEO_ONSET')]
+
+# Load sample report (large — use chunking if needed)
+samples = pd.read_csv('exports/sample_report.csv', sep='\t',
+                       low_memory=False)
+
+# Replace missing values
+fix = fix.replace('.', pd.NA)
+fix['CURRENT_FIX_DURATION'] = pd.to_numeric(fix['CURRENT_FIX_DURATION'])
+
+
+========================================================================
+ALTERNATIVE: EXPORT DIRECTLY FROM EDF (NO DATA VIEWER)
+========================================================================
+
+If you prefer to skip Data Viewer entirely:
+
+Option A - edf2asc command-line tool (from SR Research):
+  edf2asc input.edf -e -res       # exports events with resolution
+  edf2asc input.edf -s -miss -1   # exports samples, missing = -1
+
+  This creates .asc text files you can parse in Python.
+
+Option B - pyedfread (Python library):
+  pip install pyedfread
+
+  import pyedfread
+  samples, events, messages = pyedfread.read_edf('participant.edf')
+  # samples: DataFrame with timestamp, x, y, pupil
+  # events: DataFrame with fixations and saccades
+  # messages: DataFrame with experiment messages
+
+Option C - eyelinkio (newer Python library):
+  pip install eyelinkio
+
+  from eyelinkio import read_edf
+  edf = read_edf('participant.edf')
+  # Access: edf['samples'], edf['events'], edf['messages']
+
+NOTE: Data Viewer is still recommended because:
+  - It handles calibration corrections
+  - It can apply drift correction
+  - It validates data quality
+  - Interest area analysis is built-in
+  - It generates publication-ready visualizations
+
+
+========================================================================
+QUICK CHECKLIST BEFORE EXPORTING
+========================================================================
+
+[ ] All EDF files loaded into Data Viewer
+[ ] Check data quality: Analysis -> Data Quality -> Data Loss Summary
+[ ] Verify trial segmentation: each trial should show correct start/end
+[ ] Check that experiment messages (VIDEO_ONSET etc.) are present
+[ ] Define interest periods for video segments (optional but helpful)
+[ ] Choose your separator (tab vs comma) — be consistent
+[ ] Export all 4-5 reports to the exports/ folder
+[ ] Verify in Python: load each file, check row counts and columns

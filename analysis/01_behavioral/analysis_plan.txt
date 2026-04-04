@@ -1,0 +1,52 @@
+01 - BEHAVIORAL ANALYSIS
+========================
+
+PURPOSE: Analyze participant responses (accuracy, speed, confidence) to answer
+whether people can reliably perceive Big Five traits from short face videos.
+
+DATA NEEDED:
+- participant_*.csv files (columns: trait, response_correct, response_time, confidence_rating)
+
+ANALYSES TO RUN:
+----------------
+
+1. OVERALL ACCURACY vs CHANCE (50%)
+   - Calculate mean accuracy across all participants and all trials
+   - One-sample t-test: is overall accuracy significantly above 50%?
+   - Report: mean accuracy, SD, t-statistic, p-value, Cohen's d
+
+2. ACCURACY PER TRAIT
+   - Calculate mean accuracy for each of the 5 Big Five traits
+   - One-sample t-tests for each trait against 50% chance
+   - Apply Bonferroni or FDR correction for multiple comparisons (5 tests)
+   - Rank traits by perceptibility
+   - Visualization: bar chart with error bars and significance stars
+
+3. RESPONSE TIME ANALYSIS
+   - Mean RT for correct vs incorrect trials (paired t-test)
+   - Mean RT per trait (one-way repeated-measures ANOVA)
+   - RT distribution: check for outliers (>3 SD from mean, or <200ms)
+   - Visualization: violin plots of RT by trait, split by correct/incorrect
+
+4. SPEED-ACCURACY TRADEOFF
+   - Correlation between RT and accuracy per participant
+   - Are faster responses more or less accurate?
+   - Scatter plot: mean RT vs mean accuracy per participant
+
+5. PRACTICE/FATIGUE EFFECTS
+   - Split trials into early (first 40) vs late (last 85) blocks
+   - Compare accuracy and RT between blocks
+   - Check if performance improves (learning) or declines (fatigue)
+
+STATISTICAL METHODS:
+- One-sample t-test (accuracy vs 50%)
+- Paired t-test (correct vs incorrect RT)
+- Repeated-measures ANOVA (trait differences)
+- Pearson correlation (speed-accuracy)
+- Effect sizes: Cohen's d for t-tests, eta-squared for ANOVA
+
+OUTPUT FILES TO GENERATE:
+- behavioral_summary_stats.csv
+- accuracy_by_trait.png
+- rt_by_trait.png
+- rt_correct_vs_incorrect.png

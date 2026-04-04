@@ -1,0 +1,207 @@
+\documentclass[12pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{float}
+
+\geometry{margin=2.5cm}
+\onehalfspacing
+
+% Header/Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{CS390 -- Interim Report}
+\fancyhead[R]{Melike Kara -- 22203094}
+\fancyfoot[C]{\thepage}
+
+\begin{document}
+
+% Title Page
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\Large\textbf{Bilkent University}}\\[0.3cm]
+{\large Department of Computer Engineering}\\[2cm]
+
+{\LARGE\textbf{CS390 -- Summer Training / Project}}\\[0.5cm]
+{\LARGE\textbf{Interim Report}}\\[2cm]
+
+{\Large\textbf{Personality Perception from Face Videos:\\Eye Tracking User Study}}\\[2cm]
+
+\begin{tabular}{rl}
+\textbf{Student:} & Melike Kara \\
+\textbf{Student ID:} & 22203094 \\
+\textbf{Supervisor:} & Prof.\ Dr.\ U\u{g}ur G\"{u}d\"{u}kbay \\
+\textbf{Department:} & Computer Engineering \\
+\end{tabular}
+
+\vfill
+{\large March 2026}
+\end{titlepage}
+
+% Table of Contents
+\tableofcontents
+\newpage
+
+%------------------------------------------------------------
+\section{Introduction}
+%------------------------------------------------------------
+
+Understanding how humans perceive personality traits from facial cues is a fundamental question in social cognition and human--computer interaction. Prior research has shown that people can make rapid and reasonably accurate personality judgments based on brief exposures to faces and facial behavior~\citep{cafaro2014first, ruhland2014perception}. With the advent of eye-tracking technology, it has become possible to investigate the underlying visual attention mechanisms that drive these judgments.
+
+This project investigates how people perceive Big Five personality traits from short face videos, using a pairwise comparison paradigm combined with eye tracking. In each trial, participants view two sequential face videos and judge which person appears to exhibit a given personality trait more strongly. Eye movements are recorded throughout the experiment using an EyeLink 1000 Plus eye tracker to analyze gaze patterns associated with personality perception.
+
+The primary research questions are:
+\begin{enumerate}
+    \item Can participants reliably distinguish between high and low levels of Big Five personality traits from short face videos?
+    \item Which personality traits are more easily perceived from facial appearance and behavior?
+    \item How do gaze patterns (fixation duration, fixation count, and gaze transitions) differ when participants judge different personality traits?
+    \item Is there a relationship between participants' confidence in their judgments and their accuracy?
+\end{enumerate}
+
+%------------------------------------------------------------
+\section{Literature Review}
+%------------------------------------------------------------
+
+This section reviews the relevant literature across three main themes: personality perception from visual cues, the role of eye gaze in personality and social perception, and eye-tracking methodologies in perceptual studies.
+
+\subsection{Personality Perception from Visual Cues}
+
+Research on first impressions has demonstrated that people form rapid personality judgments from minimal behavioral cues. \citet{cafaro2014first} investigated how personality impressions transfer to first encounters between humans and virtual agents. In their study, subjects' avatars approached greeting agents in a virtual museum, where each agent exhibited nonverbal immediacy cues such as smile, gaze, and proximity. Their findings showed that within only 12.5 seconds of interaction, subjects formed impressions of agents' personality (extraversion) and interpersonal attitude (hostility/friendliness). Notably, proximity influenced extraversion judgments, while smile and gaze affected friendliness perceptions, and these results held across different camera perspectives.
+
+The influence of facial motion on personality perception has been explored in the context of animated characters. \citet{hyde2016evaluating} examined how exaggerated and damped facial motion magnitude influences impressions of cartoon and realistic animated characters on extroversion, warmth, and competence. Their experiments revealed that facial motion magnitude affected cartoon characters' perceived extroversion and competence more than warmth, whereas for realistic characters, it primarily affected extroversion ratings. A follow-up experiment incorporating emotional valence showed that motion magnitude influenced perceptions of respectfulness and calmness but not attentiveness, providing evidence-based principles for character animation.
+
+\subsection{Eye Gaze, Personality, and Social Perception}
+
+Eye gaze behavior has emerged as a significant cue in personality perception. \citet{ruhland2014perception} conducted a perceptual experiment to determine whether specific personality traits can be portrayed through eye and head movement alone, in the absence of other facial animation cues. Using motion-captured eye and head movements from actors portraying different personalities on both realistic and cartoon models, they found that participants could differentiate between personality traits solely through eye gaze, blinks, and head movement. Importantly, personality perception was robust across different levels of character realism.
+
+A comprehensive scoping review by \citet{skala2025use} examined the use of eye movement tracking in personality research across various domains including job interviews, education, human--robot interaction, and user interface design. Their systematic review of 21 studies from ACM and IEEE digital libraries demonstrated that eye-tracking has proven effective in capturing behavioral cues linked to personality traits such as emotional responses, leadership potential, and learning preferences. The review highlighted opportunities for future research in using eye-tracking for personalized technologies and behavior-based analytics.
+
+\subsection{Visual Perception and Facial Processing in Immersive Contexts}
+
+The perception of faces and visual stimuli has also been investigated in immersive display contexts. \citet{duchowski2014reducing} reported on gaze-contingent depth-of-field (DOF) for reducing visual discomfort when viewing stereoscopic displays. Their subjective results showed that gaze-contingent DOF significantly reduces visual discomfort, and when individual stereoacuity was taken into account, objective gaze vergence measurements corroborated previous reports showing significant bias toward the zero depth plane.
+
+\citet{poulakos2015alternating} explored how the placement of visual cues within a stereoscopic scene can assist viewers in maintaining vergence--accommodation decoupling. They demonstrated that a continuous depth element can improve the time required to transition visual attention in depth, and observed that subjective fatigue assessment emerges before quantitative performance decline, providing insights relevant to stereoscopic content design.
+
+\subsection{Eye-Tracking Methodologies and Frameworks}
+
+Advances in eye-tracking analysis methodologies have expanded the scope of gaze research. \citet{booth2013gaze3d} presented Gaze3D, a framework that incorporates user-perspective gaze data with 3D scene reconstructions. Unlike traditional approaches that map fixations onto 2D panoramas from a fixed vantage point, their system enables visualization of gaze data from multiple viewers on a single 3D model, allowing subjects to move freely through the scene. This approach preserves relative object positions during visualization and provides better insight into viewers' problem-solving and search strategies.
+
+The intersection of face perception and privacy in immersive media was investigated by \citet{wohler2024investigating}, who studied facial anonymization techniques in 360$^\circ$ videos. Comparing non-anonymized videos with blurring, black boxes, and face-swapping techniques shown on regular screens and head-mounted displays, they found that face-swapping was perceived as the most realistic and least disruptive technique, though participants raised concerns about its anonymization effectiveness. Their results also showed that presence is affected by facial anonymization in HMD conditions.
+
+\subsection{Summary}
+
+The reviewed literature establishes that personality perception from visual cues is a well-studied phenomenon that extends from real human faces to virtual and animated characters. Eye gaze plays a dual role in this domain: as a cue that conveys personality information and as a measurement tool that reveals the perceptual processes underlying personality judgments. Eye-tracking technology provides a powerful means to study these processes, with frameworks and methodologies continually advancing. Our study builds on this foundation by combining pairwise personality comparison with eye-tracking analysis to investigate how gaze patterns relate to Big Five personality perception from face videos.
+
+%------------------------------------------------------------
+\section{Methodology}
+%------------------------------------------------------------
+
+\subsection{Participants}
+
+A total of 51 participants will be recruited for the study. All participants are required to be at least 18 years old and must not be currently enrolled in any course taught by the study supervisor. Participation is voluntary, and informed consent is obtained before the experiment begins.
+
+\subsection{Stimuli}
+
+The stimuli consist of 50 face videos organized by Big Five personality traits (Extraversion, Agreeableness, Conscientiousness, Emotional Stability, and Openness). For each trait, there are 5 high-level and 5 low-level videos, resulting in 10 videos per trait. Videos are approximately 15--16 seconds in duration and are presented in MP4 format (H.264 codec).
+
+\subsection{Experimental Design}
+
+The experiment employs a pairwise comparison paradigm with a full factorial design. For each personality trait, every high-level video is paired with every low-level video, yielding $5 \times 5 = 25$ trials per trait and $25 \times 5 = 125$ total trials. Trial order is randomized with constraints to prevent consecutive trials of the same trait (minimum 2-trial gap). Video presentation order within each pair is counterbalanced.
+
+\subsection{Trial Structure}
+
+Each trial follows this sequence:
+\begin{enumerate}
+    \item \textbf{Fixation cross} (1 second)
+    \item \textbf{Question preview:} The personality-related comparison question is displayed (e.g., ``Which person appears more outgoing, sociable, and energetic?''), and the participant presses SPACE to proceed.
+    \item \textbf{Fixation cross} (1 second)
+    \item \textbf{Video 1 label} (1 second), followed by \textbf{Video 1} ($\sim$16 seconds)
+    \item \textbf{Inter-video fixation} (1 second)
+    \item \textbf{Video 2 label} (1 second), followed by \textbf{Video 2} ($\sim$16 seconds)
+    \item \textbf{Response screen:} The participant selects which video matched the personality description (key 1 or 2).
+    \item \textbf{Confidence rating:} The participant rates their confidence on a 1--5 scale.
+\end{enumerate}
+
+Breaks are provided every 20 trials.
+
+\subsection{Apparatus}
+
+Eye movements are recorded using an EyeLink 1000 Plus eye tracker at a sampling rate of 1000~Hz with accuracy better than 0.5$^\circ$ of visual angle. A 9-point calibration (HV9) is performed at the beginning of each session with an acceptance criterion of less than 1.0$^\circ$ average error. The experiment software is implemented in Python using PsychoPy (v2025.2.4) with the pylink library for EyeLink integration.
+
+\subsection{Data Collection}
+
+For each trial, the following behavioral measures are recorded: participant ID, trial number, personality trait, video identifiers, position of the high-level video, participant response, response correctness, response time, and confidence rating. Eye-tracking data includes gaze position coordinates, pupil size, fixations, saccades, timestamps, and area-of-interest transitions.
+
+%------------------------------------------------------------
+\section{Current Progress}
+%------------------------------------------------------------
+
+\begin{itemize}
+    \item The experimental software has been fully developed and tested using PsychoPy with EyeLink integration.
+    \item The stimulus set (50 face videos across 5 personality traits) has been prepared and organized.
+    \item The trial structure, randomization logic, and data logging systems have been implemented and validated.
+    \item Pilot testing has been conducted to verify the experiment flow and calibration procedure.
+    \item Data collection with the 51 participants is currently in progress.
+    \item The literature review covering personality perception, eye-tracking methodologies, and related domains has been completed.
+\end{itemize}
+
+%------------------------------------------------------------
+\section{Planned Analysis}
+%------------------------------------------------------------
+
+\subsection{Behavioral Analysis}
+\begin{itemize}
+    \item Accuracy rates per personality trait, compared against chance level (50\%).
+    \item Response time analysis for correct vs.\ incorrect trials and across traits.
+    \item Confidence--accuracy correlation analysis.
+\end{itemize}
+
+\subsection{Eye-Tracking Analysis}
+\begin{itemize}
+    \item Gaze distribution: total dwell time on chosen vs.\ unchosen videos.
+    \item Fixation patterns: mean fixation duration, fixation count, and first fixation location.
+    \item Transition analysis: number of gaze transitions between the two videos and last gaze before decision.
+\end{itemize}
+
+%------------------------------------------------------------
+\section{Timeline}
+%------------------------------------------------------------
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Period} & \textbf{Task} \\
+\midrule
+January 2026 & Literature review and experiment design \\
+February 2026 & Software development and pilot testing \\
+March 2026 & Data collection (51 participants) \\
+April 2026 & Data analysis and results \\
+May 2026 & Final report writing and submission \\
+\bottomrule
+\end{tabular}
+\caption{Project timeline.}
+\end{table}
+
+%------------------------------------------------------------
+% References
+%------------------------------------------------------------
+\newpage
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

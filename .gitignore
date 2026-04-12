@@ -36,3 +36,6 @@ trials/*.csv
 # Temporary files
 *.tmp
 *.temp
+
+# First Impressions dataset (large, not for version control)
+first-impressions/

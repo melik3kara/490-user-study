@@ -1,4 +1,0 @@
-Video: DTZeyoKUPx4.005.mp4
-Trait: openness
-Level: low
-Score: 0.1222

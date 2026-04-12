@@ -1,0 +1,26 @@
+participant_id,session,trial_id,trait,video_first,video_second,high_position,response,response_correct,response_time,confidence_rating,trial_start_time,video1_onset_time,video1_offset_time,video2_onset_time,video2_offset_time,response_time_absolute
+1,1,1,Extraversion,extraversion_high1_84emxO86qa8.005.mp4,extraversion_low1__kK9tGN883Y.000.mp4,first,first,True,0.9871,5,329.7829,342.6938,357.8682,360.1531,375.3384,376.3364
+1,1,2,Emotional Stability,emotional_stability_low4_OLFhKCgexRU.000.mp4,emotional_stability_high3__kK9tGN883Y.000.mp4,second,second,True,1.3631,1,377.7125,384.1181,399.3041,401.5801,416.7803,418.1553
+1,1,3,Conscientiousness,conscientiousness_low4_-fXqnCljdm0.003.mp4,conscientiousness_high4_IzKWDY_QNTU.000.mp4,second,second,True,4.6914,5,419.0786,427.9502,443.1497,445.4718,460.5856,465.2885
+1,1,4,Extraversion,extraversion_high3_As93GgkTdt4.004.mp4,extraversion_low3_-fXqnCljdm0.003.mp4,first,second,False,2.0921,4,466.4038,473.1620,488.2765,490.6169,505.7206,507.8227
+1,1,5,Emotional Stability,emotional_stability_high1_-fXqnCljdm0.003.mp4,emotional_stability_low2_7QeVs-mXmcI.003.mp4,first,first,True,3.3307,4,510.1451,519.7992,534.9004,537.1703,552.3454,555.6900
+1,1,6,Agreeableness,agreeableness_high5_4T9UUWWRE94.000.mp4,agreeableness_low2_oxw3nT9LSsg.000.mp4,first,first,True,2.2158,4,557.9085,565.1768,580.2710,582.5468,597.7230,599.9474
+1,1,7,Extraversion,extraversion_high4_84emxO86qa8.001.mp4,extraversion_low5_PHv6CzBIC5E.004.mp4,first,first,True,6.8323,4,600.9709,607.3776,622.4756,624.7476,639.9064,646.7462
+1,1,8,Conscientiousness,conscientiousness_low3_Jv2lyDcOmEM.002.mp4,conscientiousness_high3_IMCEXoAkZv4.005.mp4,second,second,True,1.2642,5,648.2130,659.5057,674.7083,676.9969,692.1694,693.4393
+1,1,9,Agreeableness,agreeableness_low4_PHv6CzBIC5E.001.mp4,agreeableness_high4_VZ6jhnbk-5g.004.mp4,second,second,True,5.3339,3,694.4091,704.1126,719.1819,721.5169,736.6101,741.9539
+1,1,10,Emotional Stability,emotional_stability_high2_69BopbFc34U.000.mp4,emotional_stability_low3_84emxO86qa8.005.mp4,first,second,False,5.4646,4,743.8086,750.5305,765.7985,768.0520,783.2323,788.7061
+1,1,11,Openness,openness_high5_wAl_Pm7xG3A.001.mp4,openness_low4_PWM-bKcs2p8.004.mp4,first,second,False,4.2401,3,790.4579,807.6528,822.7492,825.0180,840.2910,844.5435
+1,1,12,Conscientiousness,conscientiousness_high5_UWVOT3YPQH4.001.mp4,conscientiousness_low1_iJGHwoJKEpA.002.mp4,first,first,True,2.3435,2,846.4175,874.8791,889.9755,892.3148,907.4060,909.7627
+1,1,13,Agreeableness,agreeableness_low1_1RMdiCbNNh4.003.mp4,agreeableness_high2_KGRUaRe3r7I.001.mp4,second,first,False,5.2083,3,911.5946,922.7213,937.8217,940.2661,955.2732,960.4910
+1,1,14,Emotional Stability,emotional_stability_high4_PHv6CzBIC5E.001.mp4,emotional_stability_low1_jjFzwsootdM.000.mp4,first,first,True,5.0953,2,962.6492,971.6979,986.6739,989.0315,1004.1132,1009.2192
+1,1,15,Openness,openness_high2_3S8QUGYVf_w.003.mp4,openness_low2_PHv6CzBIC5E.004.mp4,first,first,True,3.5736,5,1010.0861,1019.3715,1034.4365,1036.7114,1051.8698,1055.4582
+1,1,16,Extraversion,extraversion_high2_fBMKlYUjA9E.003.mp4,extraversion_low4_3zAyM2edy1g.004.mp4,first,first,True,3.6486,3,1057.4444,1098.1910,1113.3857,1115.6822,1130.8173,1134.4758
+1,1,17,Emotional Stability,emotional_stability_high5_ZIk7N-xHvF4.002.mp4,emotional_stability_low5_f8eU5Pc-y0g.004.mp4,first,first,True,4.2654,2,1136.3489,1148.2285,1163.4934,1165.7326,1180.9249,1185.2041
+1,1,18,Agreeableness,agreeableness_high1_l3RE0rN7oEg.003.mp4,agreeableness_low5_DTZeyoKUPx4.005.mp4,first,first,True,2.3182,4,1186.3024,1195.3332,1210.3290,1212.5809,1227.7611,1230.0896
+1,1,19,Conscientiousness,conscientiousness_high1_jjFzwsootdM.000.mp4,conscientiousness_low2_DTZeyoKUPx4.005.mp4,first,second,False,3.2071,1,1232.0728,1238.3400,1253.5381,1255.8725,1270.9682,1274.1874
+1,1,20,Extraversion,extraversion_low2_oxw3nT9LSsg.000.mp4,extraversion_high5_FxVUG2R1y0Q.004.mp4,second,second,True,2.2356,4,1275.7404,1282.3459,1297.4329,1299.6845,1314.9289,1317.1760
+1,1,21,Openness,openness_low1_PHv6CzBIC5E.001.mp4,openness_high4_BmDClgdWlH4.002.mp4,second,second,True,3.7323,4,1785.7061,1797.8397,1813.0193,1815.2653,1830.4418,1834.1851
+1,1,22,Agreeableness,agreeableness_low3__kK9tGN883Y.000.mp4,agreeableness_high3_MvWDky9ZaWU.000.mp4,second,second,True,3.4122,4,1835.3560,1841.2647,1856.3836,1858.6409,1873.8967,1877.3251
+1,1,23,Conscientiousness,conscientiousness_high2_OLFhKCgexRU.000.mp4,conscientiousness_low5_oxw3nT9LSsg.000.mp4,first,first,True,3.6233,5,1881.2538,1885.7624,1900.9626,1903.1255,1918.4020,1922.0353
+1,1,24,Openness,openness_low3_3zAyM2edy1g.004.mp4,openness_high1_jSw-grsJCnE.003.mp4,second,second,True,3.3952,3,1924.0173,1933.7756,1948.9482,1951.2001,1966.3817,1969.7874
+1,1,25,Openness,openness_low5_DTZeyoKUPx4.005.mp4,openness_high3_h9jIdLBaMEo.002.mp4,second,second,True,6.2915,3,1971.2848,1978.9823,1994.1758,1996.4422,2011.6260,2017.9286

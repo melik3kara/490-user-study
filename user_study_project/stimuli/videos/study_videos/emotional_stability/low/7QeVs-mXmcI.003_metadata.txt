@@ -1,4 +1,0 @@
-Video: 7QeVs-mXmcI.003.mp4
-Trait: emotional_stability
-Level: low
-Score: 0.0417

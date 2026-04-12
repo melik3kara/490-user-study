@@ -1,4 +1,0 @@
-Video: wAl_Pm7xG3A.001.mp4
-Trait: openness
-Level: high
-Score: 0.9667

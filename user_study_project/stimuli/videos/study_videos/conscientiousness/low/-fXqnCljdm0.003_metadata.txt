@@ -1,4 +1,0 @@
-Video: -fXqnCljdm0.003.mp4
-Trait: conscientiousness
-Level: low
-Score: 0.0485

@@ -1,4 +1,0 @@
-Video: 3zAyM2edy1g.004.mp4
-Trait: openness
-Level: low
-Score: 0.1111

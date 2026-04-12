@@ -1,4 +1,0 @@
-Video: -fXqnCljdm0.003.mp4
-Trait: emotional_stability
-Level: high
-Score: 0.9792

@@ -1,4 +1,0 @@
-Video: PHv6CzBIC5E.001.mp4
-Trait: openness
-Level: low
-Score: 0.0000

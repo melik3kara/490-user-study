@@ -273,8 +273,8 @@ class DataLogger:
         
         # Response statistics
         responses = {
-            'left': sum(1 for t in self.trial_data if t.get('response') == 'left'),
-            'right': sum(1 for t in self.trial_data if t.get('response') == 'right'),
+            'first': sum(1 for t in self.trial_data if t.get('response') == 'first'),
+            'second': sum(1 for t in self.trial_data if t.get('response') == 'second'),
         }
         
         # Response time statistics

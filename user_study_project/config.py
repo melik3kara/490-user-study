@@ -84,6 +84,9 @@ QUESTION_TEMPLATES = {
 # Base video folder path
 VIDEO_BASE_PATH = "stimuli/videos/study_videos_preprocessed"
 
+# Practice trial video folder (videos shown only during practice, not experiment)
+PRACTICE_VIDEO_PATH = "stimuli/videos/practice"
+
 # ==============================================================================
 # RESPONSE SETTINGS
 # ==============================================================================

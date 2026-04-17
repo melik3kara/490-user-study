@@ -279,86 +279,49 @@ class TrialManager:
     def generate_practice_trials(self, stimuli_dict=None):
         """
         Generate practice trials.
-        
-        Practice trials use the same structure as experimental trials
-        but may use different or repeated stimuli.
-        
-        Parameters
-        ----------
-        stimuli_dict : dict, optional
-            Stimulus dictionary (uses placeholder if None).
-            
+
+        Practice trials use videos from a dedicated practice folder
+        (first-impressions clips) that are distinct from the experiment set.
+
         Returns
         -------
         list
             List of practice trial dictionaries.
         """
-        if stimuli_dict is None:
-            stimuli_dict = self._load_video_files()
-        
-        if not stimuli_dict:
-            print("WARNING: No videos found for practice trials")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        practice_path = os.path.join(script_dir, self.config.PRACTICE_VIDEO_PATH)
+
+        practice_videos = sorted(
+            glob.glob(os.path.join(practice_path, "*.mp4"))
+            + glob.glob(os.path.join(practice_path, "*.avi"))
+        )
+
+        if len(practice_videos) < 2:
+            print(f"WARNING: Need at least 2 videos in {practice_path} for practice")
             self.practice_trials = []
             return []
-        
+
         practice_trials = []
-        
-        # Get a sample of traits for practice
-        available_traits = [t for t in self.config.TRAITS if t in stimuli_dict]
-        practice_traits = random.sample(
-            available_traits,
-            min(self.config.NUM_PRACTICE_TRIALS, len(available_traits))
-        )
-        
-        for i, trait in enumerate(practice_traits):
-            high_videos = stimuli_dict[trait]["high"]
-            low_videos = stimuli_dict[trait]["low"]
-            
-            if not high_videos or not low_videos:
-                continue
-            
-            high_video = high_videos[0]
-            low_video = low_videos[0]
-            high_first = random.choice([True, False])
-            
-            # Build full video paths (absolute)
-            trait_folder = trait.lower().replace(" ", "_")
-            abs_base = self._get_abs_base_path()
-            
-            if high_first:
-                video_first = high_video
-                video_second = low_video
-                video_first_path = os.path.join(
-                    abs_base, trait_folder, "high", high_video
-                )
-                video_second_path = os.path.join(
-                    abs_base, trait_folder, "low", low_video
-                )
-            else:
-                video_first = low_video
-                video_second = high_video
-                video_first_path = os.path.join(
-                    abs_base, trait_folder, "low", low_video
-                )
-                video_second_path = os.path.join(
-                    abs_base, trait_folder, "high", high_video
-                )
-            
+        for i in range(self.config.NUM_PRACTICE_TRIALS):
+            pair = random.sample(practice_videos, 2)
+            video_first_path, video_second_path = pair
+            trait = random.choice(self.config.TRAITS)
+
             practice_trial = {
                 "trial_id": f"practice_{i + 1}",
                 "trait": trait,
-                "video_first": video_first,
-                "video_second": video_second,
+                "video_first": os.path.basename(video_first_path),
+                "video_second": os.path.basename(video_second_path),
                 "video_first_path": video_first_path,
                 "video_second_path": video_second_path,
-                "high_video": high_video,
-                "low_video": low_video,
-                "high_position": "first" if high_first else "second",
+                "high_video": "",
+                "low_video": "",
+                "high_position": "n/a",
                 "is_practice": True,
             }
-            
+
             practice_trials.append(practice_trial)
-        
+
         self.practice_trials = practice_trials
         return practice_trials
     

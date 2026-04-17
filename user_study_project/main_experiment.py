@@ -335,9 +335,7 @@ class PairwisePerceptionExperiment:
         
         # Generate practice trials if enabled
         if config.INCLUDE_PRACTICE:
-            self.trial_manager.generate_practice_trials(
-                stimuli_dict=None  # Use subset of real videos
-            )
+            self.trial_manager.generate_practice_trials()
         
         # Save trial list for reproducibility
         trial_list_path = os.path.join(
